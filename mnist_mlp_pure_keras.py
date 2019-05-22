@@ -4,7 +4,6 @@ import cv2
 import os
 import tensorflow as tf
 from tensorflow import keras
-from datetime import datetime
 
 # This is a modification to the mnist_mlp_keras_sequential.py
 # We are using keras.model.fit to replace the custom train/validation process
@@ -64,13 +63,14 @@ def train(verbose=0):
 def inference(filepath):
     """Reconstruct the model, load whole model directly and run inference on a given picture."""
     try:
-        new_model = keras.models.load_model(MODEL_FILE)
-        # new_model = keras.experimental.load_from_saved_model(MODEL_FILE)
+        model = keras.models.load_model(MODEL_FILE)
+        # model = keras.experimental.load_from_saved_model(MODEL_FILE)
         image = cv2.imread(filepath, 0).reshape(1, 784).astype('float32') / 255
         probs = model.predict(image)
         print('it is a: {} with probability {:4.2f}%'.format(probs.argmax(), 100 * probs.max()))
     except:
         print('inference failed.')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for program')
