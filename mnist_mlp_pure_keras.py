@@ -11,7 +11,7 @@ from tensorflow import keras
 # Using model.fit is actually noticeably slower than custom training loop
 # model save/load are still broken even now we are pure keras in model struct, compile, train and save/load
 # found a issue https://github.com/keras-team/keras/issues/10417
-# I don't see any advantage using model.fit, we lose customization and loss speed too.
+# I don't see any advantage using model.fit, we lose customization and lose speed too.
 
 
 BATCH_SIZE = 32

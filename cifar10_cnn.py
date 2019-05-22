@@ -35,8 +35,8 @@ class ConvBlock(keras.Model):
         self.pooling = layers.AveragePooling2D(pool_size=(2, 2))
 
     def call(self, x):
-        x = keras.activations.relu(self.bn1(self.conv1(x)))
-        x = keras.activations.relu(self.bn2(self.conv2(x)))
+        x = tf.nn.relu(self.bn1(self.conv1(x)))
+        x = tf.nn.relu(self.bn2(self.conv2(x)))
         x = self.pooling(x)
         return x
 
