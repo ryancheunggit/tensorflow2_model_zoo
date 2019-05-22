@@ -1,7 +1,13 @@
 # Tensorflow 2.0 playground
 
-## TF2.0alpha version was used for developing these example codes  
+This is my playground repo for experimenting with Tensorflow 2.0 which is still in preview. I want to explore the new APIs and figure out a programming model that works best with the up-coming release.
+
 CPU only version installation:  
 ```bash
 !pip install -q tensorflow==2.0.0-alpha0
 ```
+
+## Contents
+
+
+## Notes
