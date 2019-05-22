@@ -6,41 +6,34 @@ import tensorflow as tf
 from tensorflow import keras
 from datetime import datetime
 
-# This is a modification to the mnist_mlp_eager.py
-# simply wrap the training step and validation in function with tf.function decorator
-# Noticed ~5 times faster even on CPU
+# This is a modification to the mnist_mlp_function.py
+# replace the keras.model subclass model with simple keras sequential model
+# I can't dump/load the model using the regular keras.model.save/load
+# The only option seems to be using the save/load from keras.experimental,
+# But, the loaded model's weights seems to be way off.
 
 BATCH_SIZE = 32
 NUM_CLASS = 10
 NUM_EPOCHS = 5
 LEARNING_RATE = 1e-3
-if not os.path.exists('models/mnist_mlp_function/'):
-    os.mkdir('models/mnist_mlp_function/')
-MODEL_FILE = 'models/mnist_mlp_function/model'
+if not os.path.exists('models/mnist_mlp_keras_sequential/'):
+    os.mkdir('models/mnist_mlp_keras_sequential/')
+MODEL_FILE = 'models/mnist_mlp_keras_sequential/model'
 
 
-class MLP(keras.Model):
-    """MLP model class using tf.Keras API."""
-    def __init__(self, num_class=NUM_CLASS):
-        super(MLP, self).__init__()
-        self.encoder = keras.Sequential([
-            keras.layers.Dense(units=128),
-            keras.layers.BatchNormalization(),
-            keras.layers.Activation(activation='relu'),
-            keras.layers.Dense(units=32),
-            keras.layers.BatchNormalization(),
-            keras.layers.Activation(activation='relu')
-        ])
-        self.decoder = keras.Sequential([
-            keras.layers.Dense(units=num_class),
-            keras.layers.Dropout(rate=.1),
-            keras.layers.Activation(activation='softmax')
-        ])
-
-    def call(self, x):
-        x = self.encoder(x)
-        x = self.decoder(x)
-        return x
+def MLP():
+    model = keras.Sequential()
+    model.add(keras.layers.InputLayer(input_shape=(784,)))
+    model.add(keras.layers.Dense(units=128))
+    model.add(keras.layers.BatchNormalization())
+    model.add(keras.layers.Activation(activation='relu'))
+    model.add(keras.layers.Dense(units=32))
+    model.add(keras.layers.BatchNormalization())
+    model.add(keras.layers.Activation(activation='relu'))
+    model.add(keras.layers.Dense(units=NUM_CLASS))
+    model.add(keras.layers.Dropout(rate=.1))
+    model.add(keras.layers.Activation(activation='softmax'))
+    return model
 
 
 def train(verbose=0):
@@ -98,14 +91,14 @@ def train(verbose=0):
                 train_loss.result(), train_accuracy.result() * 100,
                 test_loss.result(), test_accuracy.result() * 100
             ))
-    # it appears that for keras.Model subclass model, we can only save weights in 2.0 alpha
-    model.save_weights(MODEL_FILE, save_format='tf')
+    # model.save(MODEL_FILE) # does not work yet! issue https://github.com/tensorflow/tensorflow/issues/26809
+    keras.experimental.export_saved_model(model, MODEL_FILE)
 
 
 def inference(filepath):
-    """Reconstruct the model, load weights and run inference on a given picture."""
-    model = MLP()
-    model.load_weights(MODEL_FILE)
+    """Reconstruct the model, load whole model directly and run inference on a given picture."""
+    # model = keras.models.load_model(MODEL_FILE)
+    model = keras.experimental.load_from_saved_model(MODEL_FILE)
     image = cv2.imread(filepath, 0).reshape(1, 784).astype('float32') / 255
     probs = model.predict(image)
     print('it is a: {} with probability {:4.2f}%'.format(probs.argmax(), 100 * probs.max()))
@@ -121,6 +114,6 @@ if __name__ == '__main__':
     if args.procedure == 'train':
         train(args.verbose)
     else:
-        assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
+        assert os.path.exists(MODEL_FILE), 'model not found, train a model before calling inference.'
         assert os.path.exists(args.image_path), 'can not find image file.'
         inference(args.image_path)

@@ -17,7 +17,9 @@ BATCH_SIZE = 32
 NUM_CLASS = 10
 NUM_EPOCHS = 5
 LEARNING_RATE = 1e-3
-MODEL_FILE = 'models/mnist_mlp'
+if not os.path.exists('models/mnist_mlp_eager/'):
+    os.mkdir('models/mnist_mlp_eager/')
+MODEL_FILE = 'models/mnist_mlp_eager/model'
 
 
 class MLP(keras.Model):
