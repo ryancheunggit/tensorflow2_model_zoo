@@ -8,9 +8,10 @@ from datetime import datetime
 
 # This is a modification to the mnist_mlp_keras_sequential.py
 # We are using keras.model.fit to replace the custom train/validation process
-# Keras wants use to shuffle the dataset, but it seems to add overhead.
-# Using model.fit is actually slower than custom training loop
-# model save load also brokes, https://github.com/keras-team/keras/issues/10417
+# Keras wants to enforce us to shuffle the dataset, but it seems to add quite a bit overhead.
+# Using model.fit is actually noticeably slower than custom training loop
+# model save/load are still broken even now we are pure keras in model struct, compile, train and save/load
+# found a issue https://github.com/keras-team/keras/issues/10417
 # I don't see any advantage using model.fit, we lose customization and loss speed too.
 
 
