@@ -18,11 +18,11 @@ BATCH_SIZE = 32
 NUM_CLASS = 10
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-3
-MIXUP_ALPHA = .75
+MIXUP_ALPHA = .2
 
-if not os.path.exists('models/cifar10_cnn/'):
-    os.mkdir('models/cifar10_cnn/')
-MODEL_FILE = 'models/cifar10_cnn/model'
+if not os.path.exists('models/cifar10_cnn_mixup/'):
+    os.mkdir('models/cifar10_cnn_mixup/')
+MODEL_FILE = 'models/cifar10_cnn_mixup/model'
 CIFAR10_LABELS = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 
