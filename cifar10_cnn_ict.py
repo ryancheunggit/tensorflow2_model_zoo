@@ -169,7 +169,7 @@ def train(verbose=0):
     for epoch in range(NUM_EPOCHS):
         t0 = datetime.now()
         # calculate ict loss weights, this weight peaks at W_MAX in sigmoid fashion from epoch 0 to 1/4 total epochs
-        w = min(W_MAX, 50 / (1 + np.exp(NUM_EPOCHS / 4 - epoch)))
+        w = min(W_MAX, 50 / (1 + np.exp(NUM_EPOCHS / 8 - epoch)))
         # train
         for idx, (x_batch, y_batch) in enumerate(train_dataset):
             # TODO: can the unlabeled data fetch done from valid_dataset?
