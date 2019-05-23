@@ -56,7 +56,6 @@ def train(verbose=0):
 
     # training
     model.fit(x=train_dataset, epochs=NUM_EPOCHS, validation_data=valid_dataset)
-
     model.save(MODEL_FILE)  # still, save this way, won't be able to load
 
 
@@ -77,8 +76,12 @@ if __name__ == '__main__':
     parser.add_argument('procedure', choices=['train', 'inference'],
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--image_path', default=None, help='Path to jpeg image file to predict on.')
+    parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
     if args.procedure == 'train':
         train(args.verbose)
     else:

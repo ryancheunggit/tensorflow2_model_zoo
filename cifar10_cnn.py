@@ -12,11 +12,10 @@ from datetime import datetime
 # Here we have a convlution nets training on cifar10 dataset.
 # We are exploring a bit modularization here with the new API
 # the model is constructed from multiple smaller instances of custom subclasses from keras.Model
-# I felt the new API is super similar to PyTorch.
 
 BATCH_SIZE = 32
 NUM_CLASS = 10
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 LEARNING_RATE = 1e-3
 if not os.path.exists('models/cifar10_cnn/'):
     os.mkdir('models/cifar10_cnn/')
@@ -53,15 +52,29 @@ class MaxAvgPool(keras.Model):
         return x
 
 
+class Classifier(keras.Model):
+    """A simple classifier with one hidden layer."""
+    def __init__(self, num_class):
+        super(Classifier, self).__init__()
+        self.hidden = layers.Dense(units=32)
+        self.classifier = layers.Dense(units=num_class)
+
+    def call(self, x):
+        x = tf.nn.relu(tf.nn.dropout(self.hidden(x), .2))
+        x = tf.nn.softmax(self.classifier(x))
+        return x
+
+
+
 class CNN(keras.Model):
     """Convolutional Network."""
-    def __init__(self, sizes=(8, 16), num_class=NUM_CLASS):
+    def __init__(self, sizes=(32, 64), num_class=NUM_CLASS):
         super(CNN, self).__init__()
         self.feature_extraction = keras.Sequential([
             ConvBlock(out_channels=size) for size in sizes
         ])
         self.feature = MaxAvgPool()
-        self.classifier = layers.Dense(units=num_class, activation='softmax')
+        self.classifier = Classifier(num_class=NUM_CLASS)
 
     def call(self, x):
         x = self.feature_extraction(x)
@@ -144,8 +157,12 @@ if __name__ == '__main__':
     parser.add_argument('procedure', choices=['train', 'inference'],
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--image_path', default=None, help='Path to jpeg image file to predict on.')
+    parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
     if args.procedure == 'train':
         train(args.verbose)
     else:

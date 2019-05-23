@@ -6,11 +6,12 @@ import tensorflow as tf
 from tensorflow import keras
 from datetime import datetime
 
-# The model here is a modern version Multilayer peceptron/Fully connected network with 2 hidden layers.
+# The model here is Multilayer peceptron/Fully connected network with 2 hidden layers.
 # The encoder/feature_extraction part is (Linear -> BN -> Relu) * 2
 # The decoder/classifier part is Linear -> Dropout -> Softmax
-# the training loop is in pytorch autograd style with eager execution only.
-# For Subclassed model like this one, we can not use SavedModel util from tf2.0
+# It gets to 95% + test accuracy in 1 epoch.
+# the training loop is in pytorch style with eager execution only.
+# For Subclassed model like this one, it seems we can not use SavedModel util from tf2.0
 # We can only save the weights, the python code is needed to re-construct model to be used for inference
 
 BATCH_SIZE = 32
@@ -111,8 +112,12 @@ if __name__ == '__main__':
     parser.add_argument('procedure', choices=['train', 'inference'],
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--image_path', default=None, help='Path to jpeg image file to predict on.')
+    parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
     if args.procedure == 'train':
         train(args.verbose)
     else:
