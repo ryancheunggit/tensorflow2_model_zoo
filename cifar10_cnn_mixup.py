@@ -9,7 +9,7 @@ from tensorflow.keras import layers
 from datetime import datetime
 
 # This is a modification to the cifar10_cnn.py
-# We are adding mixup to the training
+# We are adding mixup to the training  reference: https://arxiv.org/abs/1710.09412
 # With mixup, it is encourging the model to have near linear behavior between categories.
 # Note that I am using tf.gather, because unlike pytorch, numpy style sclicing seems won't work with tf Tensors.
 
@@ -36,9 +36,9 @@ class ConvBlock(keras.Model):
         self.bn2 = layers.BatchNormalization()
         self.pooling = layers.AveragePooling2D(pool_size=(2, 2))
 
-    def call(self, x):
-        x = tf.nn.relu(self.bn1(self.conv1(x)))
-        x = tf.nn.relu(self.bn2(self.conv2(x)))
+    def call(self, x, training=True):
+        x = tf.nn.relu(self.bn1(self.conv1(x), training=training))
+        x = tf.nn.relu(self.bn2(self.conv2(x), training=training))
         x = self.pooling(x)
         return x
 
@@ -62,11 +62,13 @@ class Classifier(keras.Model):
         self.hidden = layers.Dense(units=32)
         self.classifier = layers.Dense(units=num_class)
 
-    def call(self, x):
-        x = tf.nn.relu(tf.nn.dropout(self.hidden(x), .2))
+    def call(self, x, training=True):
+        if training:
+            x = tf.nn.relu(tf.nn.dropout(self.hidden(x), .2))
+        else:
+            x = tf.nn.relu(self.hidden(x))
         x = tf.nn.softmax(self.classifier(x))
         return x
-
 
 
 class CNN(keras.Model):
@@ -79,10 +81,10 @@ class CNN(keras.Model):
         self.feature = MaxAvgPool()
         self.classifier = Classifier(num_class=NUM_CLASS)
 
-    def call(self, x):
-        x = self.feature_extraction(x)
+    def call(self, x, training=True):
+        x = self.feature_extraction(x, training=training)
         x = self.feature(x)
-        x = self.classifier(x)
+        x = self.classifier(x, training=training)
         return x
 
 
@@ -118,7 +120,7 @@ def train(verbose=0):
     @tf.function
     def train_step(x_batch, y_batch, y_alt, lambd):
         with tf.GradientTape() as tape:
-            out = model(x_batch)
+            out = model(x_batch, training=True)
             loss = lambd * criterion(y_batch, out) + (1 - lambd) * criterion(y_alt, out)
         grad = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grad, model.trainable_variables))
@@ -127,7 +129,7 @@ def train(verbose=0):
 
     @tf.function
     def valid_step(x_batch, y_batch):
-        out = model(x_batch)
+        out = model(x_batch, training=False)
         loss = criterion(y_batch, out)
         test_loss(loss)
         test_accuracy(y_batch, out)

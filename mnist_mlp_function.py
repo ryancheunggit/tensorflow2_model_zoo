@@ -37,9 +37,9 @@ class MLP(keras.Model):
             keras.layers.Activation(activation='softmax')
         ])
 
-    def call(self, x):
-        x = self.encoder(x)
-        x = self.decoder(x)
+    def call(self, x, training=True):
+        x = self.encoder(x, training=training)
+        x = self.decoder(x, training=training)
         return x
 
 
@@ -65,7 +65,7 @@ def train(verbose=0):
     @tf.function
     def train_step(x_batch, y_batch):
         with tf.GradientTape() as tape:
-            out = model(x_batch)
+            out = model(x_batch, training=True)
             loss = criterion(y_batch, out)
         grad = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grad, model.trainable_variables))
@@ -74,7 +74,7 @@ def train(verbose=0):
 
     @tf.function
     def valid_step(x_batch, y_batch):
-        out = model(x_batch)
+        out = model(x_batch, training=False)
         loss = criterion(y_batch, out)
         test_loss(loss)
         test_accuracy(y_batch, out)
