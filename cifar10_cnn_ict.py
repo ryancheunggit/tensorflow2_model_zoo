@@ -116,7 +116,7 @@ def train(verbose=0):
 
     # initialize and sync model weights
     # TODO: how do i initialize weighte with out passing an actual batch?
-    init_batch = x_train[np.random.choice(range(len(x_train)), BATCH_SIZE)]
+    init_batch, _ = next(iter(train_dataset.shuffle(32).take(1)))
     _, _ = model(init_batch, training=False), ema_model(init_batch, training=False)
     _copy_model_weights(ema_model, model)
 
@@ -173,8 +173,8 @@ def train(verbose=0):
         # train
         for idx, (x_batch, y_batch) in enumerate(train_dataset):
             # TODO: can the unlabeled data fetch done from valid_dataset?
-            u_batch_1 = x_valid[np.random.choice(range(len(x_valid)), BATCH_SIZE)]
-            u_batch_2 = x_valid[np.random.choice(range(len(x_valid)), BATCH_SIZE)]
+            u_batch_1, _ = next(iter(valid_dataset.shuffle(32).take(1)))
+            u_batch_2, _ = next(iter(valid_dataset.shuffle(32).take(1)))
             train_step(x_batch, y_batch, u_batch_1, u_batch_2, w)
 
         # validate

@@ -3,8 +3,8 @@ import argparse
 import cv2
 import os
 import tensorflow as tf
-from tensorflow import keras
 from datetime import datetime
+from tensorflow import keras
 
 # This is a modification to the mnist_mlp_eager.py
 # simply wrap the training step and validation in function with tf.function decorator
