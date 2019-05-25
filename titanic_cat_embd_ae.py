@@ -50,17 +50,14 @@ class AutoEncoder(keras.Model):
         self.encoder = keras.layers.Dense(latent_dim, activation='relu')
         self.decoder = keras.layers.Dense(units=out_dim, activation=None)
 
-    def lookup(self, x):
-        return self.lookup(x)
-
     def encode(self, x):
-        return self.encoder(x)
+        return self.encoder(self.lookup(x))
 
     def decode(self, z):
         return tf.nn.sigmoid(self.decoder(z))
 
     def call(self, x):
-        return self.decode(self.encode(self.lookup(x)))
+        return self.decode(self.encode(x))
 
 
 class Classifier(keras.Model):
