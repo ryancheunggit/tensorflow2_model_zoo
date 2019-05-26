@@ -145,8 +145,8 @@ def train(verbose=0):
         u_mixed, q_guessed = mixup(u_batch_1, u_batch_2)
 
         with tf.GradientTape() as tape:
-            x_out = model(x_batch, training=True)
             u_out = model(u_mixed, training=False)
+            x_out = model(x_batch, training=True)
             data_loss = data_criterion(y_batch, x_out)
             consistency_loss = w * consistency_criterion(q_guessed, u_out)
             loss = data_loss + consistency_loss
