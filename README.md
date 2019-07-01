@@ -4,7 +4,7 @@ This is my playground repo for experimenting with Tensorflow 2.0 which is still 
 
 CPU only version installation:  
 ```bash
-!pip install -q tensorflow==2.0.0-alpha0
+!pip install -q tensorflow==2.0.0-beta0
 ```
 
 ## Contents
