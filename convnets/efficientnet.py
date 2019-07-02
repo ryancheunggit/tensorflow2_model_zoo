@@ -1,4 +1,4 @@
-"""EfficientNet."""
+"""EfficientNet. Based on https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet."""
 import math
 import numpy as np
 import tensorflow as tf
