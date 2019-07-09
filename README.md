@@ -1,5 +1,5 @@
 # Tensorflow 2.0 playground
-
+![image](35adva.jpg)  
 This is the repo for working with nerual networks with Tensorflow 2.0 beta.
 
 CPU only version installation:  
