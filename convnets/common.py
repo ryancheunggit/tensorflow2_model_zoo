@@ -1,4 +1,4 @@
-__all__ = ['Conv2d', 'MaxPool2d', 'Flatten']
+__all__ = ['Conv2d', 'MaxPool2d', 'Flatten', 'get_num_params']
 
 import math
 import numpy as np
@@ -203,24 +203,24 @@ class Flatten(tf.keras.Model):
         return x
 
 
-def _get_num_params(module):
+def get_num_params(module):
     """Calculate the number of parameters of a neural network module."""
-    return np.sum([np.prod(v.get_shape().as_list()) for v in module.variables])
+    return np.sum([np.prod(v.get_shape().as_list()) for v in module.trainable_variables])
 
 
 def _test_Conv2d():
     x = tf.random.uniform((32, 24, 24, 16))
     conv1 = Conv2d(in_channels=16, out_channels=40, kernel_size=3, strides=2, padding=0, dilation=1, groups=1)
     out1 = conv1(x)
-    assert _get_num_params(conv1) == (16 * 3 * 3 + 1) * 40
+    assert get_num_params(conv1) == (16 * 3 * 3 + 1) * 40
     assert out1.shape == (32, 11, 11, 40)
     conv2 = Conv2d(in_channels=16, out_channels=16, kernel_size=3, strides=2, padding=0, dilation=1, groups=16)
     out2 = conv2(x)
-    assert _get_num_params(conv2) == (1 * 3 * 3 + 1) * 16
+    assert get_num_params(conv2) == (1 * 3 * 3 + 1) * 16
     assert out2.shape == (32, 11, 11, 16)
     conv3 = Conv2d(in_channels=16, out_channels=40, kernel_size=3, strides=2, padding=0, dilation=1, groups=4)
     out3 = conv3(x)
-    assert _get_num_params(conv3) == (16 / 4 * 3 * 3 + 1) * (40 / 4) * 4
+    assert get_num_params(conv3) == (16 / 4 * 3 * 3 + 1) * (40 / 4) * 4
     assert out3.shape == (32, 11, 11, 40)
 
 

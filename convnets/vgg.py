@@ -1,11 +1,12 @@
 import tensorflow as tf
 from common import Conv2d, MaxPool2d, Flatten, get_num_params
+from tensorflow.keras.layers import BatchNormalization
 
-__all__ = ['AlexNet', 'construct_alex_net']
+__all__ = ['VGG', 'construct_vgg_net', 'vgg11', 'vgg13', 'vgg16', 'vgg19']
 
 
 class ConvBlock(tf.keras.Model):
-    """Conv2d -> ReLU"""
+    """Conv2d -> BatchNorm -> ReLU"""
     def __init__(self, in_channels, out_channels, kernel_size, strides, padding, data_format, name='conv_block'):
         super(ConvBlock, self).__init__()
         self.conv2d = Conv2d(
@@ -14,14 +15,15 @@ class ConvBlock(tf.keras.Model):
             kernel_size=kernel_size,
             strides=strides,
             padding=padding,
-            use_bias=True,
+            use_bias=False,
             data_format=data_format,
             name=name + '/conv'
         )
+        self.batchnorm = BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/bn')
         self.activation = tf.keras.layers.ReLU(name=name + '/activ')
 
-    def call(self, x):
-        return self.activation(self.conv2d(x))
+    def call(self, x, training=False):
+        return self.activation(self.batchnorm(self.conv2d(x), training=training))
 
 
 class DenseBlock(tf.keras.Model):
@@ -52,25 +54,22 @@ class Classifier(tf.keras.Model):
         return self.classifier(x, training=training)
 
 
-class AlexNet(tf.keras.Model):
-    """Implementation of AlexNet.
+class VGG(tf.keras.Model):
+    """Implementation of VGG.
 
-    reference: http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf
+    reference: https://arxiv.org/abs/1409.1556
 
-    added dropouts between fully connected layers.
+    added batch normalization to conv layers, dropouts to fully connected layers.
     """
     def __init__(self,
             channels,
-            kernel_sizes,
-            strides,
-            paddings,
             in_channels=3,
             hidden_size=4096,
             dropout_rate=.5,
             num_classes=1000,
             data_format='channels_last',
             **kwargs):
-        super(AlexNet, self).__init__()
+        super(VGG, self).__init__()
         features = tf.keras.Sequential(name='feature_extractor')
         for i, channels_per_stage in enumerate(channels):
             for j, out_channels in enumerate(channels_per_stage):
@@ -78,9 +77,9 @@ class AlexNet(tf.keras.Model):
                     ConvBlock(
                         in_channels=in_channels,
                         out_channels=out_channels,
-                        kernel_size=kernel_sizes[i][j],
-                        strides=strides[i][j],
-                        padding=paddings[i][j],
+                        kernel_size=3,
+                        strides=1,
+                        padding=1,
                         data_format=data_format,
                         name='features/stage{}/conv{}'.format(i, j)
                     )
@@ -88,7 +87,7 @@ class AlexNet(tf.keras.Model):
                 in_channels = out_channels
             features.add(
                 MaxPool2d(
-                    pool_size=3,
+                    pool_size=2,
                     strides=2,
                     padding=0,
                     ceil_mode=False,
@@ -106,26 +105,49 @@ class AlexNet(tf.keras.Model):
         return logits
 
 
-def construct_alex_net(channels=None, kernel_sizes=None, strides=None, paddings=None, **kwargs):
-    channels = [[64], [192], [384, 256, 256]] if not channels else channels
-    kernel_sizes = [[11], [5], [3, 3, 3]] if not kernel_sizes else kernel_sizes
-    strides = [[4], [1], [1, 1, 1]] if not strides else strides
-    paddings = [[2], [2], [1, 1, 1]] if not paddings else paddings
-    model = AlexNet(channels, kernel_sizes, strides, paddings, **kwargs)
-    return model
+def construct_vgg_net(layers_per_stage=None, channels_per_stage=None, **kwargs):
+    layers_per_stage = [2, 2, 3, 3, 3] if not layers_per_stage else layers_per_stage
+    channels_per_stage = [64, 128, 256, 512, 512] if not channels_per_stage else channels_per_stage
+    assert len(layers_per_stage) == len(channels_per_stage)
+    channels = [[nc] * nl for (nc, nl) in zip(channels_per_stage, layers_per_stage)]
+    return VGG(channels=channels, **kwargs)
 
 
-def _test_alexnet(show_summary=False):
-    alexnet = construct_alex_net()
-    # alexnet.build(input_shape=(None, 224, 224, 3))
-    # model.compile(optimizer=tf.keras.optimizers.Adam())
+def vgg11():
+    return construct_vgg_net(layers_per_stage=[1, 1, 2, 2, 2])
+
+
+def vgg13():
+    return construct_vgg_net(layers_per_stage=[2, 2, 2, 2, 2])
+
+
+def vgg16():
+    return construct_vgg_net(layers_per_stage=[2, 2, 3, 3, 3])
+
+
+def vgg19():
+    return construct_vgg_net(layers_per_stage=[2, 2, 4, 4, 4])
+
+
+def _test_vgg():
     x = tf.random.uniform((32, 224, 224, 3))
-    out = alexnet(x, training=True)
+    model = vgg11()
+    out = model(x, training=True)
     assert out.shape == (32, 1000)
-    assert get_num_params(alexnet) == 61100840
-    if show_summary:
-        print(alexnet.summary())
+    assert get_num_params(model) == 132866088
+    model = vgg13()
+    out = model(x, training=True)
+    assert out.shape == (32, 1000)
+    assert get_num_params(model) == 133050792
+    model = vgg16()
+    out = model(x, training=True)
+    assert out.shape == (32, 1000)
+    assert get_num_params(model) == 138361768
+    model = vgg19()
+    out = model(x, training=True)
+    assert out.shape == (32, 1000)
+    assert get_num_params(model) == 143672744
 
 
 if __name__ == '__main__':
-    _test_alexnet()
+    _test_vgg()
