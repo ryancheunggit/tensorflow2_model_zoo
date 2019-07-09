@@ -1,3 +1,5 @@
+__all__ = ['Conv2d', 'MaxPool2d', 'Flatten']
+
 import math
 import numpy as np
 import tensorflow as tf
@@ -38,8 +40,7 @@ class Conv2d(tf.keras.Model):
             use_bias=True,
             data_format='channels_last',
             kernel_initializer=None,
-            name='conv2d'
-        ):
+            name='conv2d'):
         super(Conv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -107,7 +108,7 @@ class Conv2d(tf.keras.Model):
                 for i in range(groups)
             ]
             concat_axis = 1 if self.data_format == 'channels_first' else -1
-            self.concat = tf.keras.layers.Concatenate(axis=concat_axis, name = name + '/concat')
+            self.concat = tf.keras.layers.Concatenate(axis=concat_axis, name=name + '/concat')
 
     def call(self, x):
         if any(margin > 0 for margin in self.padding):
@@ -138,9 +139,8 @@ class MaxPool2d(tf.keras.Model):
             padding=0,
             ceil_mode=False,
             data_format='channels_last',
-            name='maxpool2d'
-        ):
-        """MaxPooling2D layer with explicit handling of paddings.
+            name='maxpool2d'):
+        """Max Pooling 2D layer with explicit handling of paddings.
 
         Arguments:
             pool_size: int or tuple of 2 ints, downsample scale.
@@ -194,7 +194,7 @@ class Flatten(tf.keras.Model):
     """
     def __init__(self, data_format='channels_last'):
         super(Flatten, self).__init__()
-        self.data_format=data_format
+        self.data_format = data_format
 
     def call(self, x):
         if self.data_format == 'channels_last':
