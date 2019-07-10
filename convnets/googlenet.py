@@ -84,10 +84,9 @@ class InceptionAux(tf.keras.Model):
 
 
 class GoogleNet(tf.keras.Model):
-    """Implementation of GoogleNet.
+    """Implementation of GoogleNet(Inception V1).
 
-    reference:
-
+    reference: http://arxiv.org/abs/1409.4842
     """
     def __init__(self, in_channels=3, data_format='channels_last', aux_logits=True, num_classes=1000):
         super(GoogleNet, self).__init__()
