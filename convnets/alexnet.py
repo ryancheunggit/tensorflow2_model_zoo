@@ -1,5 +1,6 @@
 import tensorflow as tf
-from common import Conv2d, MaxPool2d, Flatten, get_num_params
+from common import Conv2d, MaxPool2d, get_num_params
+from tensorflow.keras.layers import Flatten
 
 __all__ = ['AlexNet', 'construct_alex_net']
 

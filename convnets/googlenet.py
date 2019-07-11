@@ -1,6 +1,6 @@
 import tensorflow as tf
-from common import Conv2d, MaxPool2d, Flatten, get_num_params
-from tensorflow.keras.layers import BatchNormalization
+from common import Conv2d, MaxPool2d, get_num_params
+from tensorflow.keras.layers import BatchNormalization, Flatten
 
 __all__ = ['GoogleNet']
 
