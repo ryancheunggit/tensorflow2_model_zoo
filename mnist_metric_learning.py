@@ -40,9 +40,9 @@ class CosineLinear(tf.keras.Model):
 
     W.T dot X = ||W|| * ||X|| * cos(theta).
     """
-    def __init__(self, num_features, num_labels=10):
+    def __init__(self, num_features, num_classes=10):
         super(CosineLinear, self).__init__()
-        self.weight = tf.random.uniform((num_features, num_labels), dtype='float32')
+        self.weight = tf.random.uniform((num_features, num_classes), dtype='float32')
 
     def call(self, x):
         cos_theta = tf.matmul(tf.math.l2_normalize(x), tf.math.l2_normalize(self.weight))
@@ -54,11 +54,11 @@ class AdditiveAngularMarginLoss(tf.keras.Model):
 
     reference: https://arxiv.org/abs/1801.07698
     """
-    def __init__(self, s=30, m=.5, num_labels=10):
+    def __init__(self, s=30, m=.5, num_classes=10):
         super(AdditiveAngularMarginLoss, self).__init__()
         self.s = s
         self.m = m
-        self.num_labels = 10
+        self.num_classes = 10
         self.cos_m = math.cos(m)
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)
@@ -69,14 +69,14 @@ class AdditiveAngularMarginLoss(tf.keras.Model):
         sin_theta = tf.pow(1.0 - tf.pow(cos_theta, 2), .5)
         phi = cos_theta * self.cos_m - sin_theta * self.sin_m
         phi = tf.where(cos_theta > self.th, phi, cos_theta - self.mm)
-        one_hot = tf.one_hot(labels, depth=self.num_labels, dtype='float32')
+        one_hot = tf.one_hot(labels, depth=self.num_classes, dtype='float32')
         out = (one_hot * phi) + ((1.0 - one_hot) * cos_theta)
         out = out * self.s
         return self.criterion(one_hot, out)
 
 
 class ConvNet(tf.keras.Model):
-    def __init__(self, n_hidden=128, num_labels=10, last_linear='cosine'):
+    def __init__(self, n_hidden=128, num_classes=10, last_linear='cosine'):
         super(ConvNet, self).__init__()
         self.features = tf.keras.Sequential([
             ConvBlock(in_channels=1, out_channels=8, kernel_size=3, strides=2, padding=0,
@@ -88,9 +88,9 @@ class ConvNet(tf.keras.Model):
             ReLU(name='features/relu')
         ])
         if last_linear == 'cosine':
-            self.last_linear = CosineLinear(num_features=n_hidden, num_labels=num_labels)
+            self.last_linear = CosineLinear(num_features=n_hidden, num_classes=num_classes)
         else:
-            self.last_linear = Dense(num_labels, use_bias=False)
+            self.last_linear = Dense(num_classes, use_bias=False)
 
     def call(self, x, training=False):
         features = self.features(x, training=training)
@@ -180,7 +180,7 @@ def main(verbose=0):
         fig.savefig(fpath)
 
     # config model
-    model = ConvNet(n_hidden=128, num_labels=10, last_linear='cosine')
+    model = ConvNet(n_hidden=128, num_classes=10, last_linear='cosine')
     criterion = AdditiveAngularMarginLoss(s=30, m=.3)
     optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
     model = train_model(model, criterion, optimizer, max_epochs=100)
@@ -188,7 +188,7 @@ def main(verbose=0):
     plot_feature(model, 'logits', 'plots/mnist_metric_learning_logits_tsne.png')
 
 
-    model = ConvNet(n_hidden=128, num_labels=10, last_linear='linear')
+    model = ConvNet(n_hidden=128, num_classes=10, last_linear='linear')
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
     model = train_model(model, criterion, optimizer, max_epochs=100)
