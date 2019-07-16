@@ -18,11 +18,14 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
     + [above + `@tf.function` decorator](mnist_mlp_function.py)
     + [above with `tf.keras.Sequential` model](mnist_mlp_keras_sequential.py)
     + [above with `tf.keras` `.fit` api](mnist_mlp_pure_keras.py)
-    + [metric learning with additive angular margin loss](mnist_metric_learning.py) [Reference: ArcFace: Additive Angular Margin Loss for Deep Face Recognition](https://arxiv.org/abs/1801.07698)
+    + [metric learning with additive angular margin loss](mnist_metric_learning.py)  
+     Reference: [ArcFace: Additive Angular Margin Loss for Deep Face Recognition](https://arxiv.org/abs/1801.07698)
 2. `dataset == cifar10`
     + [simple cnn model](cifar10_cnn.py)
-    + [above with mixup](cifar10_cnn_mixup.py) [Reference: mixup: Beyond empirical risk minimization](https://arxiv.org/abs/1710.09412)
-    + [above with ict](cifar10_cnn_ict.py) [Reference: Interpolation Consistency Training for Semi-Supervised Learning](https://arxiv.org/abs/1903.03825)
+    + [above with mixup](cifar10_cnn_mixup.py)   
+    Reference: [mixup: Beyond empirical risk minimization](https://arxiv.org/abs/1710.09412)
+    + [above with ict](cifar10_cnn_ict.py)   
+    Reference: [Interpolation Consistency Training for Semi-Supervised Learning](https://arxiv.org/abs/1903.03825)
 3. `dataset == titanic`
     + [unsupervised categorical feature embedding](titanic_cat_embd_ae.py)
 
