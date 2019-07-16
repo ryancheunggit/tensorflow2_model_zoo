@@ -166,12 +166,12 @@ class MaxPool2d(tf.keras.Model):
             name=name
         )
 
-    def call(self, x):
+    def call(self, x, training=False):
         height, width = (x.shape[2], x.shape[3]) if self.data_format == 'channels_first' else (x.shape[1], x.shape[2])
         padding = self.padding
         if self.ceil_mode:
-            out_height = float(height + 2 * self.padding[0] - self.pool_size[0]) / self.strides[0] + 1.0
-            out_width = float(width + 2 * self.padding[1] - self.pool_size[1]) / self.strides[1] + 1.0
+            out_height = float((height + 2 * self.padding[0] - self.pool_size[0]).value) / self.strides[0] + 1.0
+            out_width = float((width + 2 * self.padding[1] - self.pool_size[1]).value) / self.strides[1] + 1.0
             if math.ceil(out_height) > math.floor(out_height):
                 padding = (padding[0] + 1, padding[1])
             if math.ceil(out_width) > math.floor(out_width):
