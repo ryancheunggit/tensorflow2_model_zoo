@@ -6,7 +6,7 @@ This is the repo for working with nerual networks with Tensorflow 2.0 beta.
 
 CPU only version installation:  
 ```bash
-!pip install -q tensorflow==2.0.0-beta0
+!pip install -q tensorflow==2.0.0-beta1
 ```
 
 GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
