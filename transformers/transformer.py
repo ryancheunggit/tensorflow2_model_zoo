@@ -45,13 +45,41 @@ class PositionalEncoding(tf.keras.Model):
         return self.dropout(x, training=training)
 
 
-def attention(query, key, value, mask=None, dropout=None, training=False):
+def attention(value, key, query, mask=None, dropout=None, training=False):
     """Scaled Dot-Product Attention.
 
     Attention(Q, K, V) = softmax_k((QK^T) / sqrt(depth))V
-    """
-    depth = query.shape[-1]
 
+    Schematically:
+
+     value     query      key
+   (bxhxlxd) (bxhxlxd) (bxhxlxd)
+       |         |         |
+       |         -----------
+       |              |
+       |           MatMul
+       |          (bxhxlxl)
+       |              |
+       |            scale
+       |              |
+       |            mask
+       |              |
+       |           softmax
+       |              |
+       ----------------
+               |
+            MatMul
+               |
+              out
+           (bxhxlxd)
+
+    size info:
+        b = batch_size
+        h = number of attention heads
+        l = length of sequence
+        d = depth of each attention head
+        """
+    depth = query.shape[-1]
     # scaled matrix multiplication
     logits = tf.matmul(query, key, transpose_b=True) / math.sqrt(depth)
 
@@ -74,6 +102,26 @@ class MultiHeadAttention(tf.keras.Model):
         n_heads: number of attention head
         d_model: embedding dimension
         dropout_rate: dropout probablity
+
+    Return
+    ------
+    attended
+
+    Schematically:
+
+     value   key   query
+       |      |      |
+    linear linear linear
+       |      |      |
+     split  split  split
+       |      |      |
+       ---------------
+              |
+           concat
+              |
+           linear
+              |
+             out
     '''
     def __init__(self, n_heads, d_model, dropout_rate=.1, name='mhattn'):
         super(MultiHeadAttention, self).__init__(name=name)
@@ -87,7 +135,7 @@ class MultiHeadAttention(tf.keras.Model):
         self.out_linear = Dense(d_model)
         self.dropout = Dropout(rate=dropout_rate)
 
-    def call(self, query, key, value, mask=None, training=False):
+    def call(self, value, key, query, mask=None, training=False):
         '''Forward pass of MultiHeadAttention.
         Argument
         --------
@@ -120,6 +168,27 @@ class MultiHeadAttention(tf.keras.Model):
 
 
 class PointwiseFeedForward(tf.keras.Model):
+    '''Pointwise Feed Forward
+
+
+    Linear expand and squeeze applied to each position(depth) separately and identically.
+
+    I think it is simillary to 1d convolution with kernel size 1.
+
+    Schematically:
+         x_in
+        (bxlxd)
+           |
+    linear1 + activ
+           |
+    x_intermediate
+       (bxlxd_ff)
+           |
+        linear2
+           |
+         x_out
+        (bxlxd)
+    '''
     def __init__(self, d_model, d_ff=768, dropout_rate=.1, name='pwffn'):
         super(PointwiseFeedForward, self).__init__(name=name)
         self.linear_1 = Dense(d_ff)
@@ -142,6 +211,28 @@ class EncoderLayer(tf.keras.layers.Layer):
         1. MultiHeadAttention
         2. PointwiseFeedForward
     The output of each sublayer is a residual connection of LayerNormalization(input + Sublayer(input)).
+
+    Schematically:
+
+    x_in, mask ----------
+         |              |
+     multihead          |
+     attention          | x_in identity
+         |              |
+         +---------------
+         |
+     layernorm
+         |
+    x_intermediate ------
+         |              |
+     pointwise          |
+    feedforward         | x_intermediate identity
+         |              |
+         +---------------
+         |
+     layernorm
+         |
+       x_out
     """
     def __init__(self, n_heads, d_model, d_ff, dropout_rate=.1, epsilon=1e-6, name='encoder_layer'):
         super(EncoderLayer, self).__init__(name=name)
@@ -174,6 +265,39 @@ class DecoderLayer(tf.keras.layers.Layer):
         3. PointwiseFeedForward
 
     The output of each sublayer is a residual connection of LayerNormalization(input + Sublayer(input)).
+
+    Schematically:
+
+                     x_in, lookahead mask ------------
+                    (v, k, q)                        |
+                               |                     |
+                           multihead                 |
+                           attention                 | x_in identity
+                               |                     |
+                               + ---------------------
+                               |
+                           layernorm
+                               |
+                 x_intermediate1, padding mask -------
+                     (q)                             |
+                               |                     |
+           encoder_out --- multihead                  | x_intermediate1 identity
+              (v, k)       attention                 |
+                               |                     |
+                               +----------------------
+                               |
+                           layernorm
+                               |
+                        x_intermediate2---------------
+                               |                     |
+                           pointwise                 |
+                          feedforward                | x_intermediate2 identity
+                               |                     |
+                               +----------------------
+                               |
+                           layernorm
+                               |
+                             x_out
     """
     def __init__(self, n_heads, d_model, d_ff, dropout_rate=.1, epsilon=1e-6, name='decoder'):
         super(DecoderLayer, self).__init__(name=name)
@@ -195,7 +319,7 @@ class DecoderLayer(tf.keras.layers.Layer):
         attn1 = self.dropout1(attn1, training=training)
         out1 = self.layernorm1(attn1 + x)
 
-        attn2 = self.multihead_attn2(enc_output, enc_output, enc_output, mask=padding_mask, training=training)
+        attn2 = self.multihead_attn2(enc_output, enc_output, out1, mask=padding_mask, training=training)
         attn2 = self.dropout2(attn2, training=training)
         out2 = self.layernorm2(attn2 + out1)
 
@@ -320,21 +444,21 @@ def _test_attention():
     q = tf.constant([[0, 10, 0]], dtype='float32')                                      # 1 x 3
     k = tf.constant([[10, 0, 0], [0, 10, 0], [0, 0, 10], [0, 0, 10]], dtype='float32')  # 4 x 3
     v = tf.constant([[1, 0], [10, 0], [100, 0], [1000, 0]], dtype='float32')            # 4 x 2
-    o = attention(q, k, v)
+    o = attention(v, key=k, query=q)
     assert o.shape == (1, 2)
     t = np.array([[10, 0]])
     assert np.alltrue(o.numpy() == t)
 
     # case 2: query matches third and fourth key, attention would return average of the two values.
     q2 = tf.constant([[0, 0, 10]], dtype='float32')
-    o2 = attention(q2, k, v)
+    o2 = attention(v, key=k, query=q2)
     assert o2.shape == (1, 2)
     t2 = np.array([[(100 + 1000) / 2, 0]])
     assert np.alltrue(o2.numpy() == t2)
 
     # case 3
     q3 = tf.concat([q, q2], axis=0)
-    o3 = attention(q3, k, v)
+    o3 = attention(v, key=k, query=q3)
     assert o3.shape == (2, 2)
     t3 = np.vstack([t, t2])
     assert np.alltrue(o3.numpy() == t3)
