@@ -34,7 +34,7 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 
 ### Convolutional Neural Networks
 | Model | Reference | Year |
-|---|---|---|
+|-------|-----------|------|
 | [AlexNet](convnets/alexnet.py) | [ImageNet Classification with Deep Convolutional Neural Networks](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf) | 2012 |
 | [VGG](convnets/vgg.py) | [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556) | 2014 |
 | [GoogleNet](convnets/googlenet.py) | [Going Deeper with Convolutions](https://arxiv.org/abs/1409.4842) | 2015 |
@@ -43,7 +43,9 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 | [SqueezeNet](convnets/squeezenet.py) | [SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size](https://arxiv.org/abs/1602.07360) | 2016 |
 | [ResNeXt](convnets/resnet.py) | [Aggregated Residual Transformations for Deep Neural Networks](https://arxiv.org/abs/1611.05431) | 2017 |
 
-
-### Recurrent Neural Networks
+### Sequence Models
+| Model | Reference | Year |
+|-------|-----------|------|
+| [Transformer](sequence/transformer.py) | [Attention Is All You Need](https://arxiv.org/abs/1706.03762) | 2017 |
 
 ### Others
