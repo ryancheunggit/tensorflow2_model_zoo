@@ -54,7 +54,7 @@ class AdditiveAngularMarginLoss(tf.keras.Model):
 
     reference: https://arxiv.org/abs/1801.07698
     """
-    def __init__(self, s=30, m=.5, num_classes=10):
+    def __init__(self, s=16, m=.3, num_classes=10):
         super(AdditiveAngularMarginLoss, self).__init__()
         self.s = s
         self.m = m
@@ -79,9 +79,11 @@ class ConvNet(tf.keras.Model):
     def __init__(self, n_hidden=128, num_classes=10, last_linear='cosine'):
         super(ConvNet, self).__init__()
         self.features = tf.keras.Sequential([
-            ConvBlock(in_channels=1, out_channels=8, kernel_size=3, strides=2, padding=0,
+            ConvBlock(in_channels=1, out_channels=32, kernel_size=3, strides=1, padding=0,
                       data_format='channels_last', name='features/conv1'),
-            ConvBlock(in_channels=8, out_channels=16, kernel_size=3, strides=2, padding=0,
+            ConvBlock(in_channels=32, out_channels=64, kernel_size=3, strides=1, padding=0,
+                      data_format='channels_last', name='features/conv2'),
+            ConvBlock(in_channels=64, out_channels=64, kernel_size=3, strides=1, padding=0,
                       data_format='channels_last', name='features/conv2'),
             GlobalMaxPooling2D(data_format='channels_last', name='pool'),
             Dense(units=n_hidden, name='features/fc1'),
@@ -110,7 +112,7 @@ def main(verbose=0):
     train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(BATCH_SIZE)
     valid_dataset = tf.data.Dataset.from_tensor_slices((x_valid, y_valid)).batch(BATCH_SIZE)
 
-    def train_model(model, criterion, optimizer, max_epochs, min_acc=.94):
+    def train_model(model, criterion, optimizer, max_epochs, min_acc=.98):
         train_loss = tf.keras.metrics.Mean()
         test_loss = tf.keras.metrics.Mean()
         train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
@@ -187,7 +189,6 @@ def main(verbose=0):
     plot_feature(model, 'hidden', 'plots/mnist_metric_learning_hidden_tsne.png')
     plot_feature(model, 'logits', 'plots/mnist_metric_learning_logits_tsne.png')
 
-
     model = ConvNet(n_hidden=128, num_classes=10, last_linear='linear')
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
@@ -198,7 +199,7 @@ def main(verbose=0):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for program')
-    parser.add_argument('--gpu', default='1', help='gpu device id expose to program, default is cpu only.')
+    parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--verbose', type=int, default=1)
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
