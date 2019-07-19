@@ -97,16 +97,6 @@ def attention(value, key, query, mask=None, dropout=None, training=False):
 class MultiHeadAttention(tf.keras.Model):
     '''Multi-Head Attention.
 
-    Argument
-    --------
-        n_heads: number of attention head
-        d_model: embedding dimension
-        dropout_rate: dropout probablity
-
-    Return
-    ------
-    attended
-
     Schematically:
 
      value   key   query
@@ -170,9 +160,7 @@ class MultiHeadAttention(tf.keras.Model):
 class PointwiseFeedForward(tf.keras.Model):
     '''Pointwise Feed Forward
 
-
     Linear expand and squeeze applied to each position(depth) separately and identically.
-
     I think it is simillary to 1d convolution with kernel size 1.
 
     Schematically:
@@ -263,7 +251,6 @@ class DecoderLayer(tf.keras.layers.Layer):
         1. MultiHeadAttention with lookahead_mask, it takes the same input as the coupled EncoderLayer
         2. MultiHeadAttention with padding_mask, it takes the output from the coupled EncoderLayer as input
         3. PointwiseFeedForward
-
     The output of each sublayer is a residual connection of LayerNormalization(input + Sublayer(input)).
 
     Schematically:
