@@ -170,8 +170,8 @@ class MaxPool2d(tf.keras.Model):
         height, width = (x.shape[2], x.shape[3]) if self.data_format == 'channels_first' else (x.shape[1], x.shape[2])
         padding = self.padding
         if self.ceil_mode:
-            out_height = float((height + 2 * self.padding[0] - self.pool_size[0]).value) / self.strides[0] + 1.0
-            out_width = float((width + 2 * self.padding[1] - self.pool_size[1]).value) / self.strides[1] + 1.0
+            out_height = float(height + 2 * self.padding[0] - self.pool_size[0]) / self.strides[0] + 1.0
+            out_width = float(width + 2 * self.padding[1] - self.pool_size[1]) / self.strides[1] + 1.0
             if math.ceil(out_height) > math.floor(out_height):
                 padding = (padding[0] + 1, padding[1])
             if math.ceil(out_width) > math.floor(out_width):
@@ -184,6 +184,50 @@ class MaxPool2d(tf.keras.Model):
                 x = tf.pad(x, [[0, 0], list(padding), list(padding), [0, 0]], mode='REFLECT')
         x = self.pool(x)
         return x
+
+
+class SEBlock(tf.keras.Model):
+    """Squeeze-and-Excitation block.
+
+       x_in -----------------
+    (bsxhxwxc)              |
+         |                  |
+         |          global average pool     (squeeze global spatial information into channel descriptor)
+         |             (bsx1x1xc)
+         |                  |
+         |         fc (conv1x1) + relu
+         |             (bsx1x1xc/r)
+         |                   |              (excitation)
+         |         fc (conv1x1) + sigmoid
+         |              (bsx1x1xc)
+         |                   |
+         *--------------------      (channel wise multiplication)
+         |
+       x_out       (self attention)
+     (bsxhxwxc)
+
+    reference: https://arxiv.org/abs/1709.01507.
+    """
+    def __init__(self, channels, reduction, data_format='channels_last', name='se_block'):
+        super(SEBlock, self).__init__(name=name)
+        self.data_format = 'NHWC' if data_format == 'channels_last' else 'NCHW'
+        mid_channels = channels // reduction
+        self.fc1 = Conv2d(
+            in_channels=channels, out_channels=mid_channels, kernel_size=1, strides=1, use_bias=True,
+            data_format=data_format, name=name + '/squeeze')
+        self.fc2 = Conv2d(
+            in_channels=mid_channels, out_channels=channels, kernel_size=1, strides=1, use_bias=True,
+            data_format=data_format, name=name + '/excitation')
+
+    def call(self, x, training=False):
+        input_shape = tf.shape(x)
+        h, w = input_shape[1:3] if self.data_format == 'channels_last' else input_shape[2:4]
+        s = tf.nn.avg_pool2d(x, ksize=(h, w), strides=None, padding='SAME', data_format=self.data_format)
+        s = self.fc1(s)
+        s = tf.keras.activations.relu(s)
+        s = self.fc2(s)
+        s = tf.keras.activations.sigmoid(s)
+        return s * x
 
 
 class Flatten(tf.keras.Model):
@@ -246,7 +290,16 @@ def _test_Flatten():
     assert out2.shape == (32, 1728)
 
 
+def _test_seblock():
+    x = tf.random.uniform((32, 56, 56, 64))
+    b = SEBlock(channels=64, reduction=16, data_format='channels_last')
+    o = b(x)
+    assert o.shape == (32, 56, 56, 64)
+    assert get_num_params(b) == 4 * (64 * 1 * 1 + 1) + 64 * (4 * 1 * 1 + 1)
+
+
 if __name__ == '__main__':
     _test_Conv2d()
     _test_MaxPool2d()
     _test_Flatten()
+    _test_seblock()
