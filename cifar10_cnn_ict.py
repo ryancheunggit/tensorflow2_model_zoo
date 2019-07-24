@@ -4,9 +4,10 @@ import cv2
 import os
 import numpy as np
 import tensorflow as tf
+from datetime import datetime
+from itertools import cycle
 from tensorflow import keras
 from tensorflow.keras import layers
-from datetime import datetime
 
 # This is a modification to the cifar10_cnn_mixup.py
 # We are trying 'Interpolation Consistency Training for Semi-Supervised Learning' https://arxiv.org/pdf/1903.03825.pdf
@@ -108,6 +109,7 @@ def train(verbose=0):
     x_train = x_train.astype('float32') / 255.0
     x_valid = x_valid.astype('float32') / 255.0
     train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(BATCH_SIZE)
+    train_u_dataset = tf.data.Dataset.from_tensor_slices((x_valid, y_valid)).batch(2 * BATCH_SIZE)
     valid_dataset = tf.data.Dataset.from_tensor_slices((x_valid, y_valid)).batch(BATCH_SIZE)
 
     # config model
@@ -171,10 +173,11 @@ def train(verbose=0):
         # calculate ict loss weights, this weight peaks at W_MAX in sigmoid fashion from epoch 0 to 1/4 total epochs
         w = min(W_MAX, 50 / (1 + np.exp(NUM_EPOCHS / 8 - epoch)))
         # train
-        for idx, (x_batch, y_batch) in enumerate(train_dataset):
-            # TODO: can the unlabeled data fetch done from valid_dataset?
-            u_batch_1, _ = next(iter(valid_dataset.shuffle(32).take(1)))
-            u_batch_2, _ = next(iter(valid_dataset.shuffle(32).take(1)))
+        for idx, ((x_batch, y_batch), (u_batch, _)) in enumerate(zip(train_dataset, cycle(train_u_dataset))):
+            if u_batch.shape[0] != x_batch.shape[0] * 2:
+                continue
+            u_batch_1 = u_batch[:BATCH_SIZE]
+            u_batch_2 = u_batch[BATCH_SIZE:]
             train_step(x_batch, y_batch, u_batch_1, u_batch_2, w)
 
         # validate
