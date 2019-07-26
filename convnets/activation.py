@@ -5,6 +5,18 @@ from tensorflow import nn
 from tensorflow.python.framework import ops
 
 
+class ReLU6(keras.Model):
+    '''Rectified Linear 6, min(max(x, 0), 6).
+
+    It is said to be more robust when used with low-precision.
+    '''
+    def __init__(self, name):
+        super(ReLU6, self).__init__(name=name)
+
+    def call(self, x):
+        return nn.relu6(x)
+
+
 # Swish - https://arxiv.org/abs/1710.05941.
 def swish(features, beta=1, name=None):
     with ops.name_scope(name, 'Swish', [features, beta]) as name:
