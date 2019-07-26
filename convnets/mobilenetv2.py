@@ -1,11 +1,11 @@
 import tensorflow as tf
 from activation import ReLU6
 from common import Conv2d, get_num_params
-from tensorflow.nn import relu6
 from tensorflow.keras.layers import BatchNormalization, Flatten, AveragePooling2D
 
 
 __all__ = ['MobileNetV2']
+
 
 class InvertedResidual(tf.keras.Model):
     def __init__(self, in_channels, out_channels, strides, expansion_ratio=1, data_format='channels_last',
@@ -22,7 +22,7 @@ class InvertedResidual(tf.keras.Model):
                 Conv2d(in_channels, inner_channels, kernel_size=1, strides=1, padding=0, use_bias=False,
                        data_format=data_format, name=name + '/expansion')
             )
-            self.block.add(BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + 'bn0'))
+            self.block.add(BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + 'bn0'))
             self.block.add(ReLU6(name=name + 'activ0'))
 
         # depthwise conv
@@ -30,7 +30,7 @@ class InvertedResidual(tf.keras.Model):
             Conv2d(inner_channels, inner_channels, kernel_size=3, strides=strides, padding=1,
                    groups=inner_channels, use_bias=False, data_format=data_format, name=name + '/depthwise_conv')
         )
-        self.block.add(BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/bn1'))
+        self.block.add(BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/bn1'))
         self.block.add(ReLU6(name=name + '/activ1'))
 
         # point-wise conv
@@ -38,7 +38,7 @@ class InvertedResidual(tf.keras.Model):
             Conv2d(inner_channels, out_channels, kernel_size=1, strides=1, padding=0, use_bias=False,
                    data_format=data_format, name=name + '/pointwise_conv')
         )
-        self.block.add(BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/bn2'))
+        self.block.add(BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/bn2'))
 
     def call(self, x, training=False):
         if self.residual_connection:
@@ -67,7 +67,7 @@ class MobileNetV2(tf.keras.Model):
         init_conv = tf.keras.Sequential([
             Conv2d(in_channels, init_channels, kernel_size=3, strides=2, padding=1, use_bias=False,
                    data_format=data_format, name=name + '/init/conv0'),
-            BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/init/bn0'),
+            BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/init/bn0'),
             ReLU6(name=name + '/init/activ0')
         ])
 
@@ -85,7 +85,7 @@ class MobileNetV2(tf.keras.Model):
         final_conv = tf.keras.Sequential([
             Conv2d(input_channels, out_channels, kernel_size=1, strides=1, padding=0, use_bias=False,
                    data_format=data_format, name=name + '/final_conv'),
-            BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/final_bn'),
+            BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/final_bn'),
             ReLU6(name=name + '/final_activ')
         ])
 
@@ -116,6 +116,3 @@ def _test_mobilenet():
 
 if __name__ == '__main__':
     _test_mobilenet()
-
-
-
