@@ -4,7 +4,7 @@ from tensorflow.keras.layers import BatchNormalization, ReLU, GlobalAveragePooli
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d',
-    'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2', 'seresnext_50'
+    'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2', 'seresnext_50', 'seresnext_101'
 ]
 
 
@@ -191,7 +191,7 @@ class ResNet(tf.keras.Model):
         if strides != 1 or self.channels != channels * block.expansion:
             downsample = tf.keras.Sequential([
                 conv1x1(self.channels, channels * block.expansion, strides, name=name + '/identity_downsample'),
-                BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/identity_down_bn' )
+                BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/identity_down_bn')
             ])
 
         layers = []
