@@ -73,13 +73,13 @@ class MobileNetV2(tf.keras.Model):
 
         residual_bottlenecks = tf.keras.Sequential()
         input_channels = init_channels
-        for t, c, n, s in zip(T, C, N, S):
-            output_channels = int(c * width_multiplier)
-            for i in range(n):
+        for nt, nc, nn, ns in zip(t, c, n, s):
+            output_channels = int(nc * width_multiplier)
+            for i in range(nn):
                 if i == 0:
-                    residual_bottlenecks.add(InvertedResidual(input_channels, output_channels, s, expansion_ratio=t))
+                    residual_bottlenecks.add(InvertedResidual(input_channels, output_channels, ns, expansion_ratio=nt))
                 else:
-                    residual_bottlenecks.add(InvertedResidual(input_channels, output_channels, 1, expansion_ratio=t))
+                    residual_bottlenecks.add(InvertedResidual(input_channels, output_channels, 1, expansion_ratio=nt))
                 input_channels = output_channels
 
         final_conv = tf.keras.Sequential([
