@@ -57,6 +57,10 @@ S = [1, 2, 2, 2, 1, 2, 1]
 
 
 class MobileNetV2(tf.keras.Model):
+    """Implementation of MobileNetV2.
+
+    reference: https://arxiv.org/abs/1801.04381
+    """
     def __init__(self, in_channels=3, num_classes=1000, init_channels=INIT_CHANNELS, out_channels=OUT_CHANNELS,
                  t=T, c=C, n=N, s=S, width_multiplier=1., data_format='channels_last', name='MobileNetV2'):
         super(MobileNetV2, self).__init__(name=name)

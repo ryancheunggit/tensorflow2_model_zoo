@@ -247,6 +247,39 @@ class Flatten(tf.keras.Model):
         return x
 
 
+class ChannelShuffle(tf.keras.layers.Layer):
+    """Channel Shuffle operation from shufflenet.
+
+    for example:
+        input with 4 channels c1,c2,c3,c4, with n_groups == 2, shuffle result is: c1,c3,c2,c4
+        input with 6 channels c1,c2,c3,c4,c5,c6 with n_groups == 2, shuffle result is: c1,c4,c2,c5,c3,c6
+        input with 6 channels c1,c2,c3,c4,c5,c6 with n_groups == 3, shuffle result is: c1,c3,c5,c2,c4,c6
+    """
+    def __init__(self, data_format='channels_last', n_groups=2):
+        super(ChannelShuffle, self).__init__()
+        self.data_format = data_format
+        self.n_groups = n_groups
+
+    def call(self, x):
+        shape = x.get_shape().as_list()
+        if self.data_format == 'channels_last':
+            height, width, channels = shape[1:4]
+        else:
+            channels, height, width = shape[1:4]
+        assert channels % self.n_groups == 0
+        channels_per_group = channels // self.n_groups
+        if self.data_format == 'channels_last':
+            x = tf.reshape(x, shape=(-1, height, width, self.n_groups, channels_per_group))
+            x = tf.transpose(x, perm=(0, 1, 2, 4, 3))
+            x = tf.reshape(x, shape=(-1, height, width, channels))
+        else:
+            x = tf.reshape(x, shape=(-1, self.n_groups, channels_per_group, height, width))
+            x = tf.transpose(x, perm=(0, 2, 1, 3, 4))
+            x = tf.reshape(x, shape=(-1, channels, height, width))
+        return x
+
+
+
 def get_num_params(module):
     """Calculate the number of parameters of a neural network module."""
     return np.sum([np.prod(v.get_shape().as_list()) for v in module.trainable_variables])
