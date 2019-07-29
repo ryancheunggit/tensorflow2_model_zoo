@@ -331,8 +331,28 @@ def _test_seblock():
     assert get_num_params(b) == 4 * (64 * 1 * 1 + 1) + 64 * (4 * 1 * 1 + 1)
 
 
+def _test_channel_shuffle():
+    x = tf.convert_to_tensor(np.array([[
+        [[1,5,9,13,17,21], [2,6,10,14,18,22]],
+        [[3,7,11,15,19,23], [4,8,12,16,20,24]]
+    ]]))
+    e1 = tf.convert_to_tensor(np.array([[
+        [[1,13,5,17,9,21], [2,14,6,18,10,22]],
+        [[3,15,7,19,11,23], [4,16,8,20,12,24]]
+    ]]))
+    e2 = tf.convert_to_tensor(np.array([[
+        [[1,9,17,5,13,21], [2,10,18,6,14,22]],
+        [[3,11,19,7,15,23], [4,12,20,8,16,24]]
+    ]]))
+    o1 = ChannelShuffle(data_format='channels_last', n_groups=2)(x)
+    o2 = ChannelShuffle(data_format='channels_last', n_groups=3)(x)
+    assert np.all(o1.numpy() == e1.numpy())
+    assert np.all(o2.numpy() == e2.numpy())
+
+
 if __name__ == '__main__':
     _test_Conv2d()
     _test_MaxPool2d()
     _test_Flatten()
     _test_seblock()
+    _test_channel_shuffle()
