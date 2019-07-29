@@ -255,8 +255,8 @@ class ChannelShuffle(tf.keras.layers.Layer):
         input with 6 channels c1,c2,c3,c4,c5,c6 with n_groups == 2, shuffle result is: c1,c4,c2,c5,c3,c6
         input with 6 channels c1,c2,c3,c4,c5,c6 with n_groups == 3, shuffle result is: c1,c3,c5,c2,c4,c6
     """
-    def __init__(self, data_format='channels_last', n_groups=2):
-        super(ChannelShuffle, self).__init__()
+    def __init__(self, data_format='channels_last', n_groups=2, name='channel_shuffle'):
+        super(ChannelShuffle, self).__init__(name=name)
         self.data_format = data_format
         self.n_groups = n_groups
 
