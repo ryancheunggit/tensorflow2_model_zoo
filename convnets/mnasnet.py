@@ -219,7 +219,7 @@ def _test_mnasnet():
     m2 = get_mnasnet_b1_s1()
     o2 = m2(x)
     assert o2.shape == (32, 1000)
-    assert get_mnasnet_b1_s1(m2) == 4383312
+    assert get_num_params(m2) == 4383312
 
 
 if __name__ == '__main__':

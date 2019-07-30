@@ -226,12 +226,12 @@ class ShuffleNetV2(tf.keras.Model):
         return x
 
 
-def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_ratio=None, residual=False, width_scale='1',
+def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_reduction=None, residual=False, width_scale='1',
                      data_format='channels_last'):
     name = 'shufflenetv2'
     if residual:
         name = 'res_' + name
-    if se_ratio:
+    if se_reduction:
         name = 'se_' + name
     name = name + '_w' + width_scale
 
@@ -244,7 +244,7 @@ def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_ratio=None,
     elif width_scale == '2.0':
         c = [244, 488, 976]
     out_channels = 2048 if width_scale == '2.0' else 1024
-    return ShuffleNetV2(in_channels, num_classes, n_groups, se_ratio, residual, out_channels=out_channels, c=c,
+    return ShuffleNetV2(in_channels, num_classes, n_groups, se_reduction, residual, out_channels=out_channels, c=c,
                         data_format=data_format, name=name)
 
 
@@ -252,11 +252,11 @@ def _test_basic_unit():
     x = tf.random.uniform((32, 28, 28, 116))
     m1 = ShuffleNetV2BasicUnit(116)
     o1 = m1(x)
-    m2 = ShuffleNetV2BasicUnit(116, se_ratio=16)
+    m2 = ShuffleNetV2BasicUnit(116, se_reduction=16)
     o2 = m2(x)
     m3 = ShuffleNetV2BasicUnit(116, residual=True)
     o3 = m3(x)
-    m4 = ShuffleNetV2BasicUnit(116, se_ratio=16, residual=True)
+    m4 = ShuffleNetV2BasicUnit(116, se_reduction=16, residual=True)
     o4 = m4(x)
     for i, (o, m) in enumerate(zip([o1, o2, o3, o4], [m1, m2, m3, m4])):
         assert o.shape == (32, 28, 28, 116)
@@ -268,9 +268,9 @@ def _test_basic_unit():
 
 def _test_downsample_unit():
     x = tf.random.uniform((32, 56, 56, 24))
-    m1 = ShuffleNetV2DownsampleUnit(24, 116, se_ratio=None)
+    m1 = ShuffleNetV2DownsampleUnit(24, 116, se_reduction=None)
     o1 = m1(x)
-    m2 = ShuffleNetV2DownsampleUnit(24, 116, se_ratio=16)
+    m2 = ShuffleNetV2DownsampleUnit(24, 116, se_reduction=16)
     o2 = m2(x)
     assert o1.shape == o2.shape == (32, 28, 28, 116)
     assert get_num_params(m1) == 8554
@@ -281,15 +281,15 @@ def _test_shufflenetv2():
     x = tf.random.uniform((32, 224, 224, 3))
     m1 = ShuffleNetV2()
     o1 = m1(x)
-    m2 = ShuffleNetV2(se_ratio=16)
+    m2 = ShuffleNetV2(se_reduction=16)
     o2 = m2(x)
     m3 = get_shufflenetv2(residual=True)
     o3 = m3(x)
-    m4 = get_shufflenetv2(se_ratio=16, residual=True)
+    m4 = get_shufflenetv2(se_reduction=16, residual=True)
     o4 = m4(x)
     m5 = ShuffleNetV2(out_channels=2048, c=[244, 488, 976])
     o5 = m5(x)
-    m6 = get_shufflenetv2(se_ratio=16, residual=True, n_groups=4, width_scale='2.0')
+    m6 = get_shufflenetv2(se_reduction=16, residual=True, n_groups=4, width_scale='2.0')
     o6 = m6(x)
     assert o1.shape == o2.shape == o3.shape == o4.shape == o5.shape == o6.shape == (32, 1000)
     assert get_num_params(m1) == get_num_params(m3) == 2279760
