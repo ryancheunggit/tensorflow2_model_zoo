@@ -11,7 +11,7 @@ class DWConv3x3_Block(tf.keras.Model):
         super(DWConv3x3_Block, self).__init__(name=name)
         self.conv = Conv2d(channels, channels, kernel_size=3, strides=strides, padding=1, groups=channels,
                            use_bias=False, data_format=data_format, name=name + '/conv2d')
-        self.bn = BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/bn')
+        self.bn = BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/bn')
         self.activ = ReLU(name=name + '/activ') if activ else None
 
     def call(self, x, training=False):
@@ -27,7 +27,7 @@ class Conv1x1_Block(tf.keras.Model):
         super(Conv1x1_Block, self).__init__(name=name)
         self.conv = Conv2d(in_channels, out_channels, kernel_size=1, use_bias=False, data_format=data_format,
                            name=name + '/conv2d')
-        self.bn = BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/bn')
+        self.bn = BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/bn')
         self.activ = ReLU(name=name + '/activ') if activ else None
 
     def call(self, x, training=False):
@@ -66,7 +66,7 @@ class ShuffleNetV2BasicUnit(tf.keras.Model):
     if use residual connection, activation for the second 1x1Conv will be moved after addition.
     """
 
-    def __init__(self, channels, n_groups=2, se_r=None, residual=False, data_format='channels_last',
+    def __init__(self, channels, n_groups=2, se_reduction=None, residual=False, data_format='channels_last',
                  name='shufflenetv2_basic_unit'):
         assert channels % 2 == 0
         super(ShuffleNetV2BasicUnit, self).__init__(name=name)
@@ -76,11 +76,11 @@ class ShuffleNetV2BasicUnit(tf.keras.Model):
         self.branch = tf.keras.Sequential([
             Conv1x1_Block(mid_channels, mid_channels, activ=True, data_format=data_format, name=name + '/conv1x1_0'),
             DWConv3x3_Block(mid_channels, strides=1, activ=False, data_format=data_format, name=name + '/dwconv3x3'),
-            Conv1x1_Block(mid_channels, mid_channels, activ=residual == False, data_format=data_format,
+            Conv1x1_Block(mid_channels, mid_channels, activ=residual is False, data_format=data_format,
                           name=name + '/conv1x1_1')
         ])
 
-        self.se = SEBlock(mid_channels, se_r, data_format=data_format, name=name + '/se') if se_r else None
+        self.se = SEBlock(mid_channels, se_reduction, data_format, name=name + '/se') if se_reduction else None
         self.residual_activ = ReLU(name=name + '/residual_activ') if residual else None
 
         self.concat = Concatenate(axis=self.channel_axis, name=name + '/concat')
@@ -132,7 +132,7 @@ class ShuffleNetV2DownsampleUnit(tf.keras.Model):
     x1, x2 are the same as x_in.
     activation after the second relu can be delayed in case of use residual.
     """
-    def __init__(self, in_channels, out_channels, n_groups=2, se_r=None, data_format='channels_last',
+    def __init__(self, in_channels, out_channels, n_groups=2, se_reduction=None, data_format='channels_last',
                  name='shufflenetv2_downsample_unit'):
         super(ShuffleNetV2DownsampleUnit, self).__init__(name=name)
         self.channel_axis = -1 if data_format == 'channels_last' else 1
@@ -154,11 +154,10 @@ class ShuffleNetV2DownsampleUnit(tf.keras.Model):
             Conv1x1_Block(branch_mid_channels, branch_out_channels, activ=True, data_format=data_format,
                           name=name + '/branch_conv1x1_1')
         ])
-        self.se = SEBlock(branch_out_channels, se_r, data_format=data_format, name=name + '/se') if se_r else None
+        self.se = SEBlock(branch_out_channels, se_reduction, data_format, name=name + '/se') if se_reduction else None
 
         self.concat = Concatenate(axis=self.channel_axis, name=name + '/concat')
         self.shuffle = ChannelShuffle(data_format, n_groups, name=name + '/channel_shuffle')
-
 
     def call(self, x, training=False):
         x1, x2 = x, x
@@ -183,7 +182,7 @@ class ShuffleNetV2(tf.keras.Model):
 
     reference: https://arxiv.org/abs/1807.11164
     """
-    def __init__(self, in_channels=3, num_classes=1000, n_groups=2, se_r=None, residual=False,
+    def __init__(self, in_channels=3, num_classes=1000, n_groups=2, se_reduction=None, residual=False,
                  init_channels=INIT_CHANNELS, out_channels=OUT_CHANNELS, c=C, n=N, data_format='channels_last',
                  name='ShuffleNetV2'):
         super(ShuffleNetV2, self).__init__(name=name)
@@ -201,9 +200,9 @@ class ShuffleNetV2(tf.keras.Model):
             stage = tf.keras.Sequential(name=name + '/stage{}'.format(i))
             for j in range(nn):
                 if j == 0:
-                    stage.add(ShuffleNetV2DownsampleUnit(input_channels, nc, n_groups, se_r, data_format))
+                    stage.add(ShuffleNetV2DownsampleUnit(input_channels, nc, n_groups, se_reduction, data_format))
                 else:
-                    stage.add(ShuffleNetV2BasicUnit(nc, n_groups, se_r, residual, data_format))
+                    stage.add(ShuffleNetV2BasicUnit(nc, n_groups, se_reduction, residual, data_format))
             input_channels = nc
             self.features.add(stage)
         final_conv = tf.keras.Sequential([
@@ -227,12 +226,12 @@ class ShuffleNetV2(tf.keras.Model):
         return x
 
 
-def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_r=None, residual=False, width_scale='1',
+def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_ratio=None, residual=False, width_scale='1',
                      data_format='channels_last'):
     name = 'shufflenetv2'
     if residual:
         name = 'res_' + name
-    if se_r:
+    if se_ratio:
         name = 'se_' + name
     name = name + '_w' + width_scale
 
@@ -245,18 +244,19 @@ def get_shufflenetv2(in_channels=3, num_classes=1000, n_groups=2, se_r=None, res
     elif width_scale == '2.0':
         c = [244, 488, 976]
     out_channels = 2048 if width_scale == '2.0' else 1024
-    return ShuffleNetV2(in_channels, num_classes, n_groups, se_r, residual, out_channels=out_channels, c=c,
+    return ShuffleNetV2(in_channels, num_classes, n_groups, se_ratio, residual, out_channels=out_channels, c=c,
                         data_format=data_format, name=name)
+
 
 def _test_basic_unit():
     x = tf.random.uniform((32, 28, 28, 116))
     m1 = ShuffleNetV2BasicUnit(116)
     o1 = m1(x)
-    m2 = ShuffleNetV2BasicUnit(116, se_r=16)
+    m2 = ShuffleNetV2BasicUnit(116, se_ratio=16)
     o2 = m2(x)
     m3 = ShuffleNetV2BasicUnit(116, residual=True)
     o3 = m3(x)
-    m4 = ShuffleNetV2BasicUnit(116, se_r=16, residual=True)
+    m4 = ShuffleNetV2BasicUnit(116, se_ratio=16, residual=True)
     o4 = m4(x)
     for i, (o, m) in enumerate(zip([o1, o2, o3, o4], [m1, m2, m3, m4])):
         assert o.shape == (32, 28, 28, 116)
@@ -268,9 +268,9 @@ def _test_basic_unit():
 
 def _test_downsample_unit():
     x = tf.random.uniform((32, 56, 56, 24))
-    m1 = ShuffleNetV2DownsampleUnit(24, 116, se_r=None)
+    m1 = ShuffleNetV2DownsampleUnit(24, 116, se_ratio=None)
     o1 = m1(x)
-    m2 = ShuffleNetV2DownsampleUnit(24, 116, se_r=16)
+    m2 = ShuffleNetV2DownsampleUnit(24, 116, se_ratio=16)
     o2 = m2(x)
     assert o1.shape == o2.shape == (32, 28, 28, 116)
     assert get_num_params(m1) == 8554
@@ -281,15 +281,15 @@ def _test_shufflenetv2():
     x = tf.random.uniform((32, 224, 224, 3))
     m1 = ShuffleNetV2()
     o1 = m1(x)
-    m2 = ShuffleNetV2(se_r=16)
+    m2 = ShuffleNetV2(se_ratio=16)
     o2 = m2(x)
     m3 = get_shufflenetv2(residual=True)
     o3 = m3(x)
-    m4 = get_shufflenetv2(se_r=16, residual=True)
+    m4 = get_shufflenetv2(se_ratio=16, residual=True)
     o4 = m4(x)
     m5 = ShuffleNetV2(out_channels=2048, c=[244, 488, 976])
     o5 = m5(x)
-    m6 = get_shufflenetv2(se_r=16, residual=True, n_groups=4, width_scale='2.0')
+    m6 = get_shufflenetv2(se_ratio=16, residual=True, n_groups=4, width_scale='2.0')
     o6 = m6(x)
     assert o1.shape == o2.shape == o3.shape == o4.shape == o5.shape == o6.shape == (32, 1000)
     assert get_num_params(m1) == get_num_params(m3) == 2279760

@@ -24,7 +24,7 @@ class PreActConv2D(tf.keras.Model):
             data_format=data_format,
             name=name + '/conv2d'
         )
-        self.return_preact=return_preact
+        self.return_preact = return_preact
 
     def call(self, x, training=False):
         x = self.batchnorm(x, training=training)
@@ -78,11 +78,10 @@ class DenseBlock(tf.keras.Model):
         super(DenseBlock, self).__init__(name=name)
         self.units = [
             DenseUnit(in_channels=in_channels + i * growth_rate, bn_size=bn_size, growth_rate=growth_rate,
-                       dropout_rate=dropout_rate, data_format=data_format, name=name + '/dense_unit{}'.format(i)
-            ) for i in range(num_layers)
+                      dropout_rate=dropout_rate, data_format=data_format, name=name + '/dense_unit{}'.format(i))
+            for i in range(num_layers)
         ]
         self.concat = Concatenate(axis=-1 if data_format == 'channels_last' else 1, name=name + '/concat')
-
 
     def call(self, x, training=False):
         features = [x]
@@ -119,10 +118,10 @@ class DenseNet(tf.keras.Model):
                  dropout_rate=.1, num_classes=1000, data_format='channels_last', name='densenet'):
         super(DenseNet, self).__init__(name=name)
         self.init = tf.keras.Sequential(
-            layers = [
+            layers=[
                 Conv2d(in_channels=in_channels, out_channels=init_channels, kernel_size=7, strides=2, padding=3,
-                       use_bias=False, data_format=data_format, name = name + '/init/conv0'),
-                BatchNormalization(axis=-1 if data_format=='channels_last' else 1, name=name + '/init/bn'),
+                       use_bias=False, data_format=data_format, name=name + '/init/conv0'),
+                BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/init/bn'),
                 ReLU(name=name + '/init/activ'),
                 MaxPool2d(pool_size=3, strides=2, padding=1, data_format=data_format, name=name + '/init/pool')
             ], name=name + '/init'
@@ -149,7 +148,7 @@ class DenseNet(tf.keras.Model):
                     in_channels=num_channels,
                     out_channels=num_channels // 2,
                     data_format=data_format,
-                    name= name + 'dense_blocks/transit_block{}'.format(i)
+                    name=name + 'dense_blocks/transit_block{}'.format(i)
                 )
                 num_channels = num_channels // 2
                 self.dense_blocks.add(transit_block)
@@ -157,13 +156,12 @@ class DenseNet(tf.keras.Model):
         self.features = tf.keras.Sequential(
             layers=[
                 BatchNormalization(axis=-1 if data_format == 'channels_last' else 1, name=name + '/features/bn'),
-                ReLU(name = name + '/features/activ'),
+                ReLU(name=name + '/features/activ'),
                 GlobalAveragePooling2D(data_format=data_format, name=name + '/features/final_pool')
             ], name=name + '/features'
         )
 
         self.classifier = Dense(units=num_classes, name=name + '/classifier')
-
 
     def call(self, x, training=False):
         x = self.init(x, training=training)
@@ -247,4 +245,3 @@ if __name__ == '__main__':
     _test_denseblock()
     _test_trasitblock()
     _test_densenet()
-

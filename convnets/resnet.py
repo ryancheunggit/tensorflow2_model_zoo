@@ -4,8 +4,7 @@ from tensorflow.keras.layers import BatchNormalization, ReLU, GlobalAveragePooli
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d',
-    'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2', 'seresnext_50', 'seresnext_101'
-]
+    'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2', 'seresnext_50', 'seresnext_101']
 
 
 def conv3x3(in_channels, out_channels, strides=1, dilation=1, groups=1, data_format='channels_last', name='conv3x3'):
@@ -38,7 +37,7 @@ class ResBlock(tf.keras.Model):
     expansion = 1
 
     def __init__(self, in_channels, channels, strides=1, downsample=None, groups=1, base_width=64, dilation=1,
-                 se_r=None, data_format='channels_last', name='residual_block'):
+                 se_reduction=None, data_format='channels_last', name='residual_block'):
         super(ResBlock, self).__init__()
         assert (groups == 1) and (base_width == 64) and (dilation == 1)
         self.conv1 = conv3x3(in_channels, channels, strides, data_format=data_format, name=name + '/conv1')
@@ -48,8 +47,8 @@ class ResBlock(tf.keras.Model):
         self.downsample = downsample
         self.activation = ReLU()
         self.se = None
-        if se_r:
-            self.se = SEBlock(channels=channels * self.expansion, reduction=se_r, data_format=data_format,
+        if se_reduction:
+            self.se = SEBlock(channels=channels * self.expansion, reduction=se_reduction, data_format=data_format,
                               name=name + '/se')
 
     def call(self, x, training=False):
@@ -93,7 +92,7 @@ class ResBottleneckBlock(tf.keras.Model):
     expansion = 4
 
     def __init__(self, in_channels, channels, strides=1, downsample=None, groups=1, base_width=64, dilation=1,
-                 se_r=None, data_format='channels_last', name='residual_bottleneck_block'):
+                 se_reduction=None, data_format='channels_last', name='residual_bottleneck_block'):
         super(ResBottleneckBlock, self).__init__()
         mid_channels = int(channels * (base_width / 64.)) * groups
 
@@ -109,8 +108,8 @@ class ResBottleneckBlock(tf.keras.Model):
         self.activation = ReLU()
         self.downsample = downsample
         self.se = None
-        if se_r:
-            self.se = SEBlock(channels=channels * self.expansion, reduction=se_r, data_format=data_format,
+        if se_reduction:
+            self.se = SEBlock(channels=channels * self.expansion, reduction=se_reduction, data_format=data_format,
                               name=name + '/se')
 
     def call(self, x, training=False):
@@ -151,16 +150,16 @@ class ResNet(tf.keras.Model):
     Argument:
         groups: the cardinality parameter for NeXt part
         width_per_group: the D parameter for NeXt part
-        se_r: the r parameter for SE part
+        se_reduction: the r parameter for SE part
     """
     def __init__(self, res_block, layers, in_channels, num_classes=1000, groups=1, width_per_group=64,
-                 dilation_for_stride=None, se_r=0, data_format='channels_last', name='resnet'):
+                 dilation_for_stride=None, se_reduction=0, data_format='channels_last', name='resnet'):
         super(ResNet, self).__init__()
         self.channels = 64
         self.dilation = 1
         if dilation_for_stride is None:
             dilation_for_stride = [False, False, False]
-        self.se_r = se_r
+        self.se_reduction = se_reduction
         self.groups = groups
         self.base_width = width_per_group
         self.stage0 = tf.keras.Sequential([
@@ -170,18 +169,18 @@ class ResNet(tf.keras.Model):
             ReLU(name=name + '/stage0/relu'),
             MaxPool2d(pool_size=3, strides=2, padding=1, data_format=data_format, name=name + '/stage0/maxpool')
         ])
-        self.stage1 = self._make_layer(block=res_block, channels=64, blocks=layers[0], se_r=se_r)
+        self.stage1 = self._make_layer(block=res_block, channels=64, blocks=layers[0], se_reduction=se_reduction)
         self.stage2 = self._make_layer(block=res_block, channels=128, blocks=layers[1], strides=2,
-                                       dilation=dilation_for_stride[0], se_r=se_r)
+                                       dilation=dilation_for_stride[0], se_reduction=se_reduction)
         self.stage3 = self._make_layer(block=res_block, channels=256, blocks=layers[2], strides=2,
-                                       dilation=dilation_for_stride[1], se_r=se_r)
+                                       dilation=dilation_for_stride[1], se_reduction=se_reduction)
         self.stage4 = self._make_layer(block=res_block, channels=512, blocks=layers[3], strides=2,
-                                       dilation=dilation_for_stride[2], se_r=se_r)
+                                       dilation=dilation_for_stride[2], se_reduction=se_reduction)
         self.globalavgpool = GlobalAveragePooling2D(data_format=data_format, name='features')
         self.fc = Dense(units=num_classes, name='last_linear')
 
-    def _make_layer(self, block, channels, blocks, strides=1, dilation=False, se_r=0, data_format='channels_last',
-                    name='resnet_layer'):
+    def _make_layer(self, block, channels, blocks, strides=1, dilation=False, se_reduction=0,
+                    data_format='channels_last', name='resnet_layer'):
         downsample = None
         previous_dilation = self.dilation
 
@@ -196,10 +195,11 @@ class ResNet(tf.keras.Model):
 
         layers = []
         layers.append(block(self.channels, channels, strides, downsample, self.groups, self.base_width,
-                            dilation=previous_dilation, se_r=se_r, data_format=data_format, name=name + '/block_1'))
+                            dilation=previous_dilation, se_reduction=se_reduction, data_format=data_format,
+                            name=name + '/block_1'))
         for i in range(1, blocks):
             layers.append(block(self.channels, channels, groups=self.groups, base_width=self.base_width,
-                                dilation=self.dilation, se_r=se_r, data_format=data_format,
+                                dilation=self.dilation, se_reduction=se_reduction, data_format=data_format,
                                 name=name + '/block_{}'.format(i)))
         return tf.keras.Sequential(layers)
 
@@ -269,12 +269,12 @@ def wide_resnet101_2(in_channels=3, num_classes=1000):
 
 def seresnext_50(in_channels=3, num_classes=1000):
     return ResNet(ResBottleneckBlock, [3, 4, 6, 3], in_channels, num_classes=num_classes, groups=32, width_per_group=4,
-                  se_r=16)
+                  se_reduction=16)
 
 
 def seresnext_101(in_channels=3, num_classes=1000):
     return ResNet(ResBottleneckBlock, [3, 4, 23, 3], in_channels, num_classes=num_classes, groups=32, width_per_group=4,
-                  se_r=16)
+                  se_reduction=16)
 
 
 def _test_resnet():
