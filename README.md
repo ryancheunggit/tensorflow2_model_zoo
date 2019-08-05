@@ -53,4 +53,8 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 |-------|-----------|------|
 | [Transformer](sequence/transformer.py) | [Attention Is All You Need](https://arxiv.org/abs/1706.03762) | 2017 |
 
-### Others
+### Graph
+| Model | Reference | Year |
+|-------|-----------|------|
+| [MPNN](graph/mpnn.py) | [Neural Message Passing for Quantum Chemistry
+](https://arxiv.org/abs/1704.01212) | 2017 |
