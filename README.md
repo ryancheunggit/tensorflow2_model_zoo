@@ -56,5 +56,4 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 ### Graph
 | Model | Reference | Year |
 |-------|-----------|------|
-| [MPNN](graph/mpnn.py) | [Neural Message Passing for Quantum Chemistry
-](https://arxiv.org/abs/1704.01212) | 2017 |
+| [MPNN](graph/mpnn.py) | [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212) | 2017 |
