@@ -53,7 +53,13 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 |-------|-----------|------|
 | [Transformer](sequence/transformer.py) | [Attention Is All You Need](https://arxiv.org/abs/1706.03762) | 2017 |
 
-### Graph
+### Graph Neural Networks
 | Model | Reference | Year |
 |-------|-----------|------|
 | [MPNN](graph/mpnn.py) | [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212) | 2017 |
+
+
+### Factorization Machines
+| Model | Reference | Year |
+|-------|-----------|------|
+| [FM](fm/fm.py) | [Factorization Machines](https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf) | 2010 |
