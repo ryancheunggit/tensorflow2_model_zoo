@@ -62,4 +62,5 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 ### Factorization Machines
 | Model | Reference | Year |
 |-------|-----------|------|
-| [FM](fm/fm.py) | [Factorization Machines](https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf) | 2010 |
+| [FM](fm/fm.py) | [Factorization Machines](https://ieeexplore.ieee.org/abstract/document/5694074) | 2010 |
+| [FFM](fm/ffm.py) | [Field-aware factorization machines for CTR prediction](https://dl.acm.org/citation.cfm?id=2959134) | 2016 |

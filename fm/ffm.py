@@ -4,7 +4,11 @@ from common import LinearModel, FieldAwareEmbedFeatures
 
 class FieldAwareFactorizationMachine(tf.keras.Model):
     """Implementation of Field-aware Factorization Machines.
+
     Reference: https://dl.acm.org/citation.cfm?id=2959134
+
+    Difference with FM is that, each feature has #feautres latent factors. So when calculating interaction between
+    feature_i and feature_j it is doing dot product between the jth factor of feature i and ith factor of feature j.
     """
     def __init__(self, feature_cards, factor_dim, name='ffm'):
         super(FieldAwareFactorizationMachine, self).__init__(name=name)
