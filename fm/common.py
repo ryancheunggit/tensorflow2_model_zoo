@@ -3,8 +3,10 @@ import tensorflow as tf
 
 
 class LinearModel(tf.keras.Model):
-    """The linear part of the FM model.
+    """The linear model.
+
     w_0 + \Sigma_{i=1}^n {w_ix_i}
+
     The input to this module is the same as the EmbedFeatures module, see that part for detail.
     """
     def __init__(self, feature_cards, name='linear_model'):
@@ -49,10 +51,9 @@ class EmbedFeatures(tf.keras.Model):
 
 
 class FieldAwareEmbedFeatures(tf.keras.Model):
-    """Embed encoded features in num_features different embeded vectors.
+    """Embed encoded features to num_features different latent factors.
 
-    Contrast to EmbedFeatures, each input feature get one latent vector representation, field aware embedding would
-    return num_feautres latent vectors for each input feature.
+    To get the ith feature's jth factor of example k in the batch, we would do: embedded[k, i, j, :]
     """
     def __init__(self, feature_cards, factor_dim, name='embedding'):
         super(FieldAwareEmbedFeatures, self).__init__(name=name)
@@ -67,6 +68,20 @@ class FieldAwareEmbedFeatures(tf.keras.Model):
         x = x + self.offsets
         embeddings = [tf.expand_dims(embedding(x), 2) for embedding in self.embeddings]
         return tf.concat(embeddings, 2)
+
+
+class FullyConnectedNetwork(tf.keras.Model):
+    def __init__(self, units, dropout_rate=.1, name='fcn'):
+        super(FullyConnectedNetwork, self).__init__(name=name)
+        layers = []
+        for i, unit in enumerate(units):
+            layers.append(tf.keras.layers.Dense(units=unit, name=name + '/fc{}'.format(i)))
+            if dropout_rate > 0:
+                layers.append(tf.keras.layers.Dropout(rate=dropout_rate, name=name + '/dropout{}'.format(i)))
+        self.model = tf.keras.Sequential(layers)
+
+    def call(self, x, training=False):
+        return self.model(x, training=training)
 
 
 def _test_linear_model():
@@ -90,7 +105,14 @@ def _test_field_aware_feature_embedding():
     assert o.shape == (2, 3, 3, 2)
 
 
+def _test_fully_connected():
+    x = tf.random.uniform((32, 400))
+    m = FullyConnectedNetwork([256, 128, 64, 1], .1)
+    o = m(x)
+    assert o.shape == (32, 1)
+
 if __name__ == '__main__':
     _test_linear_model()
     _test_feature_embedding()
     _test_field_aware_feature_embedding()
+    _test_fully_connected()
