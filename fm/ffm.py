@@ -7,8 +7,11 @@ class FieldAwareFactorizationMachine(tf.keras.Model):
 
     Reference: https://dl.acm.org/citation.cfm?id=2959134
 
-    Difference with FM is that, each feature has #feautres latent factors. So when calculating interaction between
+    Extension to FM, each feature has #feautres latent factors. So when calculating pairwise interaction between
     feature_i and feature_j it is doing dot product between the jth factor of feature i and ith factor of feature j.
+
+    The implementation here is doing element wise matrix multiplication and set lower triangle and diagnol to 0, to
+    drop duplicate and self interaction before the sum pooling.
     """
     def __init__(self, feature_cards, factor_dim, name='ffm'):
         super(FieldAwareFactorizationMachine, self).__init__(name=name)

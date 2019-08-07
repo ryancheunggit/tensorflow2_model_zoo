@@ -7,7 +7,8 @@ class FMNeuralNetwork(tf.keras.Model):
 
     Reference: https://arxiv.org/abs/1601.02376
 
-    It flattens feature embeddings and pass through fully connected layers.
+    It flattens feature embeddings and pass through fully connected network. Instead of prefixed inner product for
+    interaction as in FM and FFM. It is asking the fcn to learn how to do feature interaction and pooling.
     """
     def __init__(self, feature_cards, factor_dim, hidden_sizes, dropout_rate=.1, name='neural_factorization_machine'):
         super(FMNeuralNetwork, self).__init__(name=name)

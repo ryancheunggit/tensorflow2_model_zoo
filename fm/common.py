@@ -5,8 +5,6 @@ import tensorflow as tf
 class LinearModel(tf.keras.Model):
     """The linear model.
 
-    w_0 + \Sigma_{i=1}^n {w_ix_i}
-
     The input to this module is the same as the EmbedFeatures module, see that part for detail.
     """
     def __init__(self, feature_cards, name='linear_model'):
@@ -71,6 +69,7 @@ class FieldAwareEmbedFeatures(tf.keras.Model):
 
 
 class FullyConnectedNetwork(tf.keras.Model):
+    """Fully connected feedforward network with optional dropouts."""
     def __init__(self, units, dropout_rate=.1, name='fcn'):
         super(FullyConnectedNetwork, self).__init__(name=name)
         layers = []

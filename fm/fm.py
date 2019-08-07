@@ -5,11 +5,15 @@ from common import LinearModel, EmbedFeatures
 class FactorizationMachine(tf.keras.Model):
     """Implementation of Factorization Machines.
 
-    Degree is 2, unchangable. The input is discretized/Integer Encoded instead of real valued.
-    See common.EmbedFeatures for detail on input configs.
-
     Reference: https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf
-    """
+
+    fm(x) = linear regression + pooling of degree d interactions between latent factors of dimension k.
+
+    Degree d here is fixed at 2, so that we can simplify the calculation. Only hyperparam is factor_dim
+
+    The input is discretized/Integer Encoded instead of real valued.
+    See common.EmbedFeatures for detail on input configs.
+   """
     def __init__(self, feature_cards, factor_dim, name='factorization_machine'):
         super(FactorizationMachine, self).__init__(name=name)
         self.embedding = EmbedFeatures(feature_cards, factor_dim, name=name + '/feature_embedding')
