@@ -4,16 +4,14 @@ import tensorflow as tf
 
 class LinearModel(tf.keras.Model):
     """The linear part of the FM model.
-
     w_0 + \Sigma_{i=1}^n {w_ix_i}
-
     The input to this module is the same as the EmbedFeatures module, see that part for detail.
     """
     def __init__(self, feature_cards, name='linear_model'):
         super(LinearModel, self).__init__(name=name)
         self.bias = tf.random.uniform((1,))
         self.linear = tf.keras.layers.Embedding(input_dim=sum(feature_cards), output_dim=1)
-        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])))
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
 
     def call(self, x, training=False):
         x = x + self.offsets
@@ -34,14 +32,15 @@ class EmbedFeatures(tf.keras.Model):
     and we want to embed features to dimension k=2.
 
     To initialize the embedding, we would pass feature_cards = [3, 4, 5] and factor_dim = 2
-    To retrive embeddings for our examples:
-        an input example that represents a (male, master, 26) would be [1, 2, 2]
-        an input example that represents a (female, phd, 35) would be [0, 3, 2]
+
+    Example of encoded inputs:
+        (male, master, 26) encoded as [1, 2, 2]
+        (female, phd, 35) encoded as [0, 3, 2]
     """
     def __init__(self, feature_cards, factor_dim, name='embedding'):
         super(EmbedFeatures, self).__init__(name=name)
         self.embedding = tf.keras.layers.Embedding(input_dim=sum(feature_cards), output_dim=factor_dim)
-        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])))
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
 
     def call(self, x, training=False):
         x = x + self.offsets
@@ -49,20 +48,49 @@ class EmbedFeatures(tf.keras.Model):
         return embedded
 
 
-def _test_embedding_features():
-    x = [[1, 2, 2], [0, 3, 2]]
-    m = EmbedFeatures([3, 4, 5], 2)
-    o = m(x)
-    assert o.shape == (2, 3, 2)
+class FieldAwareEmbedFeatures(tf.keras.Model):
+    """Embed encoded features in num_features different embeded vectors.
+
+    Contrast to EmbedFeatures, each input feature get one latent vector representation, field aware embedding would
+    return num_feautres latent vectors for each input feature.
+    """
+    def __init__(self, feature_cards, factor_dim, name='embedding'):
+        super(FieldAwareEmbedFeatures, self).__init__(name=name)
+        self.num_features = len(feature_cards)
+        self.embeddings = [
+            tf.keras.layers.Embedding(sum(feature_cards), factor_dim, name=name + '/embed_{}'.format(i))
+            for i in range(self.num_features)
+        ]
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
+
+    def call(self, x, training=False):
+        x = x + self.offsets
+        embeddings = [tf.expand_dims(embedding(x), 2) for embedding in self.embeddings]
+        return tf.concat(embeddings, 2)
 
 
 def _test_linear_model():
-    x = [[1, 2, 2], [0, 3, 2]]
+    x = tf.convert_to_tensor([[1, 2, 2], [0, 3, 2]], dtype='int32')
     m = LinearModel([3, 4, 5])
     o = m(x)
     assert o.shape == (2, 1)
 
 
+def _test_feature_embedding():
+    x = tf.convert_to_tensor([[1, 2, 2], [0, 3, 2]], dtype='int32')
+    m = EmbedFeatures([3, 4, 5], 2)
+    o = m(x)
+    assert o.shape == (2, 3, 2)
+
+
+def _test_field_aware_feature_embedding():
+    x = tf.convert_to_tensor([[1, 2, 2], [0, 3, 2]], dtype='int32')
+    m = FieldAwareEmbedFeatures([3, 4, 5], 2)
+    o = m(x)
+    assert o.shape == (2, 3, 3, 2)
+
+
 if __name__ == '__main__':
-    _test_embedding_features()
     _test_linear_model()
+    _test_feature_embedding()
+    _test_field_aware_feature_embedding()
