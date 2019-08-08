@@ -83,6 +83,50 @@ class FullyConnectedNetwork(tf.keras.Model):
         return self.model(x, training=training)
 
 
+def attention(value, key, query, mask=None, dropout=None, training=False):
+    depth = query.shape[-1]
+    logits = tf.matmul(query, key, transpose_b=True) / depth ** .5
+    if mask:
+        logits += mask * -1e9
+    if dropout:
+        logits = dropout(logits, training=training)
+    alignment = tf.nn.softmax(logits, axis=-1)
+    attended = tf.matmul(alignment, value)
+    return attended
+
+
+class MultiHeadAttention(tf.keras.Model):
+    """Multi-Head Attention"""
+    def __init__(self, n_heads, d_model, dropout_rate=.1, name='multihead_attention'):
+        super(MultiHeadAttention, self).__init__(name=name)
+        assert d_model % n_heads == 0
+        self.n_heads = n_heads
+        self.d_model = d_model
+        self.depth = d_model // n_heads
+        self.query_linear = tf.keras.layers.Dense(d_model)
+        self.key_linear = tf.keras.layers.Dense(d_model)
+        self.value_linear = tf.keras.layers.Dense(d_model)
+        self.out_linear = tf.keras.layers.Dense(d_model)
+        self.dropout = tf.keras.layers.Dropout(rate=dropout_rate)
+
+    def call(self, value, key, query, mask=None, training=False):
+        bs = tf.shape(query)[0]
+        query = self.query_linear(query)
+        key = self.key_linear(key)
+        value = self.value_linear(value)
+
+        query = tf.transpose(tf.reshape(query, (bs, -1, self.n_heads, self.depth)), [0, 2, 1, 3])
+        key = tf.transpose(tf.reshape(key, (bs, -1, self.n_heads, self.depth)), [0, 2, 1, 3])
+        value = tf.transpose(tf.reshape(value, (bs, -1, self.n_heads, self.depth)), [0, 2, 1, 3])
+
+        attn = attention(query, key, value, mask=mask, dropout=self.dropout, training=training)
+        attn = tf.transpose(attn, [0, 2, 1, 3])
+        attn = tf.reshape(attn, (bs, -1, self.d_model))
+
+        out = self.out_linear(attn)
+        return out
+
+
 def _test_linear_model():
     x = tf.convert_to_tensor([[1, 2, 2], [0, 3, 2]], dtype='int32')
     m = LinearModel([3, 4, 5])
@@ -109,6 +153,7 @@ def _test_fully_connected():
     m = FullyConnectedNetwork([256, 128, 64, 1], .1)
     o = m(x)
     assert o.shape == (32, 1)
+
 
 if __name__ == '__main__':
     _test_linear_model()
