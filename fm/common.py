@@ -11,10 +11,10 @@ class LinearModel(tf.keras.Model):
         super(LinearModel, self).__init__(name=name)
         self.bias = tf.random.uniform((1,))
         self.linear = tf.keras.layers.Embedding(input_dim=sum(feature_cards), output_dim=1)
-        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int64')
 
     def call(self, x, training=False):
-        x = x + self.offsets
+        x = x + tf.stop_gradient(self.offsets)
         return self.bias + tf.reduce_sum(self.linear(x), axis=1)
 
 
@@ -40,10 +40,10 @@ class EmbedFeatures(tf.keras.Model):
     def __init__(self, feature_cards, factor_dim, name='embedding'):
         super(EmbedFeatures, self).__init__(name=name)
         self.embedding = tf.keras.layers.Embedding(input_dim=sum(feature_cards), output_dim=factor_dim)
-        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int64')
 
     def call(self, x, training=False):
-        x = x + self.offsets
+        x = x + tf.stop_gradient(self.offsets)
         embedded = self.embedding(x)
         return embedded
 
@@ -60,10 +60,10 @@ class FieldAwareEmbedFeatures(tf.keras.Model):
             tf.keras.layers.Embedding(sum(feature_cards), factor_dim, name=name + '/embed_{}'.format(i))
             for i in range(self.num_features)
         ]
-        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int32')
+        self.offsets = tf.constant(np.concatenate(([0], np.cumsum(feature_cards)[:-1])), dtype='int64')
 
     def call(self, x, training=False):
-        x = x + self.offsets
+        x = x + tf.stop_gradient(self.offsets)
         embeddings = [tf.expand_dims(embedding(x), 2) for embedding in self.embeddings]
         return tf.concat(embeddings, 2)
 
