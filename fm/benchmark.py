@@ -8,6 +8,7 @@ import pandas as pd
 import tensorflow as tf
 from collections import defaultdict
 from fm import FactorizationMachine
+from ffm import FieldAwareFactorizationMachine
 from functools import partial
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -16,12 +17,13 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser(description='fm models benchmark runner')
 parser.add_argument('--model', type=str, default='FM')
 parser.add_argument('--gpu', type=str, default='0')
-parser.add_argument('--batch_size', type=int, default=8192)
+parser.add_argument('--batch_size', type=int, default=9000)  # It's Over 9000!
 parser.add_argument('--factor_dim', type=int, default=16)
-parser.add_argument('--learning_rate', type=float, default=1e-3)
+parser.add_argument('--learning_rate', type=float, default=3e-4)
 parser.add_argument('--patience', type=int, default=1)
 parser.add_argument('--earlystop', type=int, default=3)
-parser.add_argument('--max_epoch', type=int, default=15)
+parser.add_argument('--max_epoch', type=int, default=50)
+parser.add_argument('--steps_per_epoch', type=int, default=1000)
 args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -127,9 +129,9 @@ def get_encoded_dataset(feature_encoders, get_testset=False):
 
 def get_model(feature_cards, args):
     if args.model == 'FM':
-        model = FactorizationMachine(
-            feature_cards=feature_cards, factor_dim=args.factor_dim
-        )
+        model = FactorizationMachine(feature_cards, factor_dim=args.factor_dim)
+    if args.model == 'FFM':
+        model = FieldAwareFactorizationMachine(feature_cards, factor_dim=args.factor_dim)
     return model
 
 
@@ -144,7 +146,8 @@ def main():
     del train_features, train_targets
     gc.collect()
 
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(args.batch_size)
+    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).\
+            shuffle(buffer_size=args.steps_per_epoch).batch(args.batch_size)
     valid_dataset = tf.data.Dataset.from_tensor_slices((x_valid, y_valid)).batch(args.batch_size)
     del x_train, y_train, x_valid, y_valid
     gc.collect()
@@ -179,7 +182,7 @@ def main():
         train_loss = tf.keras.metrics.Mean()
         train_auc = tf.keras.metrics.AUC()
 
-        for step, (x, y) in enumerate(train_dataset, 1):
+        for step, (x, y) in enumerate(train_dataset.take(args.steps_per_epoch), 1):
             probas, y, loss = train_step(x, y)
             train_loss(loss)
             train_auc(y, probas)
@@ -197,9 +200,9 @@ def main():
                 epoch, valid_loss.result(), valid_auc.result())
         print(valid_message)
         with open(LOG_FILE, 'a+') as f:
-            f.write(args.model + ' ' + valid_message)
+            f.write(args.model + ' ' + valid_message + '\n')
 
-        model.save_weights(os.path.join(MODEL_PATH, 'epoch_{}'.format(epoch), save_format='tf'))
+        model.save_weights(os.path.join(MODEL_PATH, 'epoch_{}'.format(epoch)), save_format='tf')
 
         score = valid_auc.result()
         if score > best_score:
