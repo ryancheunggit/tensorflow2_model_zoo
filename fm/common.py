@@ -77,6 +77,8 @@ class FullyConnectedNetwork(tf.keras.Model):
             layers.append(tf.keras.layers.Dense(units=unit, name=name + '/fc{}'.format(i)))
             if dropout_rate > 0:
                 layers.append(tf.keras.layers.Dropout(rate=dropout_rate, name=name + '/dropout{}'.format(i)))
+            if unit != 1:
+                layers.append(tf.keras.layers.ReLU(name=name + '/activ{}'.format(i)))
         self.model = tf.keras.Sequential(layers)
 
     def call(self, x, training=False):

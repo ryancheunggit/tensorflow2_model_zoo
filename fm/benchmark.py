@@ -6,9 +6,11 @@ import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from afm import AttentionalFactorizationMachine
 from collections import defaultdict
 from fm import FactorizationMachine
 from ffm import FieldAwareFactorizationMachine
+from fnn import FMNeuralNetwork
 from functools import partial
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -19,6 +21,8 @@ parser.add_argument('--model', type=str, default='FM')
 parser.add_argument('--gpu', type=str, default='0')
 parser.add_argument('--batch_size', type=int, default=9000)  # It's Over 9000!
 parser.add_argument('--factor_dim', type=int, default=16)
+parser.add_argument('--fnn_hidden', type=str, default='256,128,1')
+parser.add_argument('--afm_attn_size',  type=int, default=16)
 parser.add_argument('--learning_rate', type=float, default=3e-4)
 parser.add_argument('--patience', type=int, default=1)
 parser.add_argument('--earlystop', type=int, default=3)
@@ -132,6 +136,10 @@ def get_model(feature_cards, args):
         model = FactorizationMachine(feature_cards, factor_dim=args.factor_dim)
     if args.model == 'FFM':
         model = FieldAwareFactorizationMachine(feature_cards, factor_dim=args.factor_dim)
+    if args.model == 'FNN':
+        model = FMNeuralNetwork(feature_cards, args.factor_dim, [int(i) for i in args.fnn_hidden.split(',')])
+    if args.model == 'AFM':
+        model = AttentionalFactorizationMachine(feature_cards, args.factor_dim, args.afm_attn_size)
     return model
 
 
@@ -212,8 +220,10 @@ def main():
             if epoch - best_epoch > patience:
                 lr *= .1
                 optimizer.lr.assign(lr)
-        if epoch - best_epoch > earlystop:
-            break
+                print('--learning rate reduced to {}'.format(lr))
+            if epoch - best_epoch > earlystop:
+                print('--early stopping triggered')
+                break
 
 
 if __name__ == '__main__':

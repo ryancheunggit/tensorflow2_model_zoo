@@ -17,6 +17,7 @@ class AttentionalFactorizationMachine(tf.keras.Model):
         self.embedding = EmbedFeatures(feature_cards, factor_dim, name=name + '/feature_embedding')
         self.attention = tf.keras.Sequential([
             tf.keras.layers.Dense(units=attention_size, name=name + '/attention_hidden'),
+            tf.keras.layers.ReLU(name=name + '/attention_activ'),
             tf.keras.layers.Dense(units=1, name=name + '/attention_logits'),
             tf.keras.layers.Softmax(axis=1, name=name + '/attention_score')
         ])
