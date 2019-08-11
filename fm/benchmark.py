@@ -6,23 +6,31 @@ import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from afm import AttentionalFactorizationMachine
 from collections import defaultdict
+from afi import AutomaticFeatureInteraction
+from afm import AttentionalFactorizationMachine
+from dfm import DeepFM
 from fm import FactorizationMachine
 from ffm import FieldAwareFactorizationMachine
 from fnn import FMNeuralNetwork
+from fnfm import FieldAwareNeuralFactorizationMachine
+from nfm import NeuralFactorizationMachine
+from xdfm import ExtremeDeepFactorizationMachine
 from functools import partial
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser(description='fm models benchmark runner')
-parser.add_argument('--model', type=str, default='FM')
+parser.add_argument('model', type=str)
 parser.add_argument('--gpu', type=str, default='0')
 parser.add_argument('--batch_size', type=int, default=9000)  # It's Over 9000!
 parser.add_argument('--factor_dim', type=int, default=16)
-parser.add_argument('--fnn_hidden', type=str, default='256,128,1')
-parser.add_argument('--afm_attn_size',  type=int, default=16)
+parser.add_argument('--fc_hidden_sizes', type=str, default='256,128,1')
+parser.add_argument('--cin_hidden_sizes', type=str, default='16,8')
+parser.add_argument('--attn_size',  type=int, default=16)
+parser.add_argument('--attn_heads', type=int, default=2)
+parser.add_argument('--attn_layers', type=int, default=3)
 parser.add_argument('--learning_rate', type=float, default=3e-4)
 parser.add_argument('--patience', type=int, default=1)
 parser.add_argument('--earlystop', type=int, default=3)
@@ -132,14 +140,27 @@ def get_encoded_dataset(feature_encoders, get_testset=False):
 
 
 def get_model(feature_cards, args):
+    fc_hidden_sizes = [int(i) for i in args.fc_hidden_sizes.split(',')]
+    cin_hidden_sizes = [int(i) for i in args.cin_hidden_sizes.split(',')]
     if args.model == 'FM':
         model = FactorizationMachine(feature_cards, factor_dim=args.factor_dim)
     if args.model == 'FFM':
         model = FieldAwareFactorizationMachine(feature_cards, factor_dim=args.factor_dim)
     if args.model == 'FNN':
-        model = FMNeuralNetwork(feature_cards, args.factor_dim, [int(i) for i in args.fnn_hidden.split(',')])
+        model = FMNeuralNetwork(feature_cards, args.factor_dim, fc_hidden_sizes)
     if args.model == 'AFM':
-        model = AttentionalFactorizationMachine(feature_cards, args.factor_dim, args.afm_attn_size)
+        model = AttentionalFactorizationMachine(feature_cards, args.factor_dim, args.attn_size)
+    if args.model == 'DeepFM':
+        model = DeepFM(feature_cards, args.factor_dim, fc_hidden_sizes)
+    if args.model == 'NFM':
+        model = NeuralFactorizationMachine(feature_cards, args.factor_dim, fc_hidden_sizes)
+    if args.model == 'xDeepFM':
+        model = ExtremeDeepFactorizationMachine(feature_cards, args.factor_dim, fc_hidden_sizes, cin_hidden_sizes)
+    if args.model == 'AFI':
+        model = AutomaticFeatureInteraction(feature_cards, args.factor_dim, args.attn_heads, args.attn_layers,
+                                            fc_hidden_sizes)
+    if args.model == 'FNFM':
+        model = FieldAwareNeuralFactorizationMachine(feature_cards, args.factor_dim, fc_hidden_sizes)
     return model
 
 
