@@ -59,7 +59,6 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 | [MPNN](graph/mpnn.py) | [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212) | 2017 |
 
 ### Factorization Machines
-Implemented models    
 See the [benchmark result](fm/benchmark.md) on how to use the benchmark runner to train these models on criteo dataset.    
   
 | Model | Reference | Year |
