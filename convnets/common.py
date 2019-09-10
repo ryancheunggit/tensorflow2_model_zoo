@@ -1,4 +1,4 @@
-__all__ = ['Conv2d', 'MaxPool2d', 'Flatten', 'get_num_params']
+__all__ = ['Conv2d', 'MaxPool2d', 'SEBlock', 'Flatten', 'GeMPooling', 'get_num_params']
 
 import math
 import numpy as np
@@ -279,6 +279,35 @@ class ChannelShuffle(tf.keras.layers.Layer):
         return x
 
 
+class GeMPooling(tf.keras.layers.Layer):
+    """Generalized mean pooling.
+
+    reference: https://arxiv.org/abs/1711.02512
+    """
+    def __init__(self, p=3, epsilon=1e-6, data_format='channels_last', name='gempooling'):
+        super(GeMPooling, self).__init__(name=name)
+        self.p = p
+        self.epsilon = epsilon
+        self.data_format=data_format
+
+    def call(self, x):
+        if self.data_format == 'channels_first':
+            x = tf.transpose(x, perm=(0, 2, 3, 1))
+
+        N, H, W, C = tf.shape(x)
+        data_format = 'NHWC'
+        ksize = (1, H, W, 1)
+
+        x = tf.where(x < self.epsilon, self.epsilon, x)
+        x = tf.pow(x, self.p)
+        x = tf.nn.avg_pool2d(x, ksize=ksize, data_format=data_format, strides=1, padding='VALID')
+        x = tf.pow(x, 1 / self.p)
+
+        if self.data_format == 'channels_first':
+            x = tf.transpose(x, perm=(0, 3, 1, 2))
+        return x
+
+
 
 def get_num_params(module):
     """Calculate the number of parameters of a neural network module."""
@@ -350,9 +379,23 @@ def _test_channel_shuffle():
     assert np.all(o2.numpy() == e2.numpy())
 
 
+def _test_gempool():
+    x = tf.random.uniform((32, 7, 7, 1024))
+    m = GeMPooling(data_format='channels_last')
+    o = m(x)
+    assert o.shape == (32, 1, 1, 1024)
+    x = tf.random.uniform((32, 1024, 7, 7))
+    m = GeMPooling(data_format='channels_first')
+    o = m(x)
+    assert o.shape == (32, 1024, 1, 1)
+
+
 if __name__ == '__main__':
+    import os
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
     _test_Conv2d()
     _test_MaxPool2d()
     _test_Flatten()
     _test_seblock()
     _test_channel_shuffle()
+    _test_gempool()

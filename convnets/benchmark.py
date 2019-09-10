@@ -1,22 +1,21 @@
 import argparse
-import cv2
 import os
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from functools import partial
-from resnet import resnet50
+from resnet import resnet18
 
 parser = argparse.ArgumentParser(description='cnn models benchmark runnerr')
 parser.add_argument('model', type=str)
 parser.add_argument('--gpu', type=str, default='0')
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=128)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--patience', type=int, default = 5)
 parser.add_argument('--earlystop', type=int, default = 10)
-parser.add_argument('--max_epoch', type=int, default = 200)
-parser.add_argument('--steps_per_epoch', type=int, default=10000)
-parser.add_argument('--valid_steps', type=int, default=500)
+parser.add_argument('--max_epoch', type=int, default = 60)
+parser.add_argument('--steps_per_epoch', type=int, default=20000)
+parser.add_argument('--valid_steps', type=int, default=800)
 args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -30,8 +29,8 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 def _get_model(args):
-    if args.model.lower() == 'resnet50':
-        model = resnet50()
+    if args.model.lower() == 'resnet18':
+        model = resnet18()
     return model
 
 
@@ -39,10 +38,10 @@ def _process_image(image, label, augment=False):
     image = tf.cast(image, tf.float32)
     if augment:
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_contrast(image, .8, 1.2)
+        image = tf.image.random_contrast(image, .7, 1.3)
         image = tf.image.random_brightness(image, .2)
         image = tf.image.random_hue(image, .2)
-        image = tf.image.random_saturation(image, .8, 1.2)
+        image = tf.image.random_saturation(image, .7, 1.3)
     image /= 255.0
     image = tf.image.resize(image, IMAGE_RES)
     image -= MEANS
