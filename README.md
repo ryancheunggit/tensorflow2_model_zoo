@@ -2,11 +2,12 @@
 
 ![image](35adva.jpg)  
 
-This is the repo for working with nerual networks with Tensorflow 2.0 beta.
+~~This is the repo for working with nerual networks with Tensorflow 2.0 beta.~~
+Tensorflow 2.0 is out now~  
 
 CPU only version installation:  
 ```bash
-!pip install -q tensorflow==2.0.0-beta1
+pip install tensorflow
 ```
 
 GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
@@ -35,7 +36,9 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 ### Losses  
 | Loss | Reference |  
 |------|-----------|  
-| [Smooth L1 Loss](losses/regression.py) | [Fast R-CNN](http://arxiv.org/abs/1504.08083) |  
+| [Smooth L1 Loss](losses/regression.py#L4) | [Fast R-CNN](http://arxiv.org/abs/1504.08083) |  
+| [ApproxNDCG](losses/losses/ranking.py#L64) | [A General Approximation Framework for Direct Optimization of Information Retrieval Measures](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2008-164.pdf) |  
+
 
 ### Optimizers  
 | Optimizer | Reference |
