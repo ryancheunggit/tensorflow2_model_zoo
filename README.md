@@ -32,6 +32,17 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 ### Tutorial Notebooks
 1. [Tensorflow basics](notebooks/01_basics.ipynb)
 
+### Losses  
+| Loss | Reference |  
+|------|-----------|  
+| [Smooth L1 Loss](losses/regression.py) | [Fast R-CNN](http://arxiv.org/abs/1504.08083) |  
+
+### Optimizers  
+| Optimizer | Reference |
+|-----------|-----------|
+| [RAdam](optimizers/radam.py) | [On the Variance of the Adaptive Learning Rate and Beyond](https://arxiv.org/abs/1908.03265) |  
+
+
 ### Convolutional Neural Networks
 | Model | Reference | Year |
 |-------|-----------|------|
