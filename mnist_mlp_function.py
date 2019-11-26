@@ -44,7 +44,7 @@ class MLP(keras.Model):
         return x
 
 
-def train(optimizer='Adam', verbose=0):
+def train(optimizer='Adam', use_swa=False, verbose=0):
     """Train the model."""
     # load dataset
     mnist = keras.datasets.mnist
@@ -63,8 +63,8 @@ def train(optimizer='Adam', verbose=0):
         optimizer = LAMB(learning_rate=LEARNING_RATE)
     elif optimizer == 'RAdam':
         optimizer = RAdam(learning_rate=LEARNING_RATE)
-    elif optimizer == 'SWA_RAdam':
-        optimizer = SWA(RAdam(learning_rate=LEARNING_RATE), swa_start=25, swa_freq=1)
+    if use_swa:
+        optimizer = SWA(optimizer, swa_start=25, swa_freq=1)
     train_loss = keras.metrics.Mean()
     train_accuracy = keras.metrics.SparseCategoricalAccuracy()
     test_loss = keras.metrics.Mean()
@@ -110,7 +110,7 @@ def train(optimizer='Adam', verbose=0):
                 train_loss.result(), train_accuracy.result() * 100,
                 test_loss.result(), test_accuracy.result() * 100
             ))
-    if 'SWA' in optimizer:
+    if use_swa:
         # for swa, use swa weights and reset batch_norm moving averages
         optimizer.assign_swa_weights(model.variables)
         # fix batch_norm moving averages
@@ -142,13 +142,14 @@ if __name__ == '__main__':
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--optimizer', default='Adam', help='optimizer of choice.')
+    parser.add_argument('--use_swa', default=False, action='store_true', help='wrap optimizer with SWA')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     if args.procedure == 'train':
-        train(args.optimizer, args.verbose)
+        train(args.optimizer, args.use_swa, args.verbose)
     else:
         assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
         assert os.path.exists(args.image_path), 'can not find image file.'
