@@ -41,10 +41,10 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 
 
 ### Optimizers  
-| Optimizer | Reference |
-|-----------|-----------|
-| [RAdam](optimizers/radam.py) | [On the Variance of the Adaptive Learning Rate and Beyond](https://arxiv.org/abs/1908.03265) |  
-
+| Optimizer | Reference | Year |
+|-----------|-----------|------|
+| [RAdam](optimizers/radam.py) | [On the Variance of the Adaptive Learning Rate and Beyond](https://arxiv.org/abs/1908.03265) | 2019 |
+| [LAMB](optimizers/lamb.py) | [Large Batch Optimization for Deep Learning: Training BERT in 76 minutes](https://arxiv.org/abs/1904.00962) | 2019 |
 
 ### Convolutional Neural Networks
 | Model | Reference | Year |

@@ -2,18 +2,17 @@ import tensorflow as tf
 
 
 class RAdam(tf.keras.optimizers.Optimizer):
-    """Optimizer that implementst the RAdam(Rectified) algorithm.
+    """Optimizer that implements the RAdam(Rectified) algorithm.
 
     RAdam is a variant of Adam, which introduced a term to rectify the variance of the adaptive learning rate.
 
-    References
-        See [Liyuan Liu et al.](https://arxiv.org/pdf/1908.03265v1.pdf).
+    Reference: https://arxiv.org/abs/1908.03265
     """
     def __init__(self,
                  learning_rate=.001,
                  beta_1=.9,
                  beta_2=.999,
-                 epsilon=1e-7,
+                 epsilon=1e-8,
                  weight_decay=0,
                  amsgrad=False,
                  sma_threshold=5.,
@@ -42,7 +41,7 @@ class RAdam(tf.keras.optimizers.Optimizer):
         self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
         self._set_hyper('beta_1', beta_1)
         self._set_hyper('beta_2', beta_2)
-        self._set_hyper('decay', self._initial_decay)
+        self._set_hyper('decay', self._initial_decay)  # for Keras LR scheduler
         self._set_hyper('weight_decay', weight_decay)
         self._set_hyper('sma_threshold', sma_threshold)
         self._set_hyper('total_steps', float(total_steps))
@@ -121,10 +120,10 @@ class RAdam(tf.keras.optimizers.Optimizer):
         r_t = tf.sqrt((sma_t - 4.) / (sma_inf - 4.) * (sma_t - 2.) / (sma_inf - 2.) * sma_inf / sma_t)
 
         # update parameters, if variance is tractable, update with adaptive momentum, otherwise with un-adapted.
-        var_t = tf.where(sma_t >= sma_threshold, r_t * m_corr_t / (v_corr_t + epsilon), m_corr_t)
+        grad_t = tf.where(sma_t >= sma_threshold, r_t * m_corr_t / (v_corr_t + epsilon), m_corr_t)
         if self._initial_weight_decay > 0.:
-            var_t += self._get_hyper('weight_decay', dtype) * var
-        var_update = var.assign_sub(lr_t * var_t, use_locking=self._use_locking)
+            grad_t += self._get_hyper('weight_decay', dtype) * var
+        var_update = var.assign_sub(lr_t * grad_t, use_locking=self._use_locking)
 
         updates = [var_update, m_t, v_t]
         if self.amsgrad:
@@ -188,11 +187,11 @@ class RAdam(tf.keras.optimizers.Optimizer):
         r_t = tf.sqrt((sma_t - 4.) / (sma_inf - 4.) * (sma_t - 2.) / (sma_inf - 2.) * sma_inf / sma_t)
 
         # update parameters, if variance is tractable, update with adaptive momentum, otherwise with un-adapted.
-        var_t = tf.where(sma_t >= sma_threshold, r_t * m_corr_t / (v_corr_t + epsilon), m_corr_t)
+        grad_t = tf.where(sma_t >= sma_threshold, r_t * m_corr_t / (v_corr_t + epsilon), m_corr_t)
         if self._initial_weight_decay > 0.:
-            var_t += self._get_hyper('weight_decay', dtype) * var
+            grad_t += self._get_hyper('weight_decay', dtype) * var
 
-        var_update = self._resource_scatter_add(var, indices, tf.gather(-lr_t * var_t, indices))
+        var_update = self._resource_scatter_add(var, indices, tf.gather(-lr_t * grad_t, indices))
 
         updates = [var_update, m_t, v_t]
         if self.amsgrad:
