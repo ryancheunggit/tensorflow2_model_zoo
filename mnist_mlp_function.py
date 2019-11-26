@@ -5,14 +5,15 @@ import os
 import tensorflow as tf
 from datetime import datetime
 from tensorflow import keras
-
+from optimizers import LAMB, RAdam, SWA
 # This is a modification to the mnist_mlp_eager.py
 # simply wrap the training step and validation in function with tf.function decorator
 # Noticed ~5 times faster even on CPU
+# Added option to try some other optimizers
 
 BATCH_SIZE = 32
 NUM_CLASS = 10
-NUM_EPOCHS = 5
+NUM_EPOCHS = 30
 LEARNING_RATE = 1e-3
 if not os.path.exists('models/mnist_mlp_function/'):
     os.mkdir('models/mnist_mlp_function/')
@@ -43,7 +44,7 @@ class MLP(keras.Model):
         return x
 
 
-def train(verbose=0):
+def train(optimizer='Adam', verbose=0):
     """Train the model."""
     # load dataset
     mnist = keras.datasets.mnist
@@ -56,10 +57,17 @@ def train(verbose=0):
     # config model
     model = MLP()
     criterion = keras.losses.SparseCategoricalCrossentropy()
-    optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    if optimizer == 'Adam':
+        optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    elif optimizer == 'LAMB':
+        optimizer = LAMB(learning_rate=LEARNING_RATE)
+    elif optimizer == 'RAdam':
+        optimizer = RAdam(learning_rate=LEARNING_RATE)
+    elif optimizer == 'SWA_RAdam':
+        optimizer = SWA(RAdam(learning_rate=LEARNING_RATE), swa_start=25, swa_freq=1)
     train_loss = keras.metrics.Mean()
-    test_loss = keras.metrics.Mean()
     train_accuracy = keras.metrics.SparseCategoricalAccuracy()
+    test_loss = keras.metrics.Mean()
     test_accuracy = keras.metrics.SparseCategoricalAccuracy()
 
     @tf.function
@@ -83,10 +91,14 @@ def train(verbose=0):
     for epoch in range(NUM_EPOCHS):
         t0 = datetime.now()
         # train
+        train_loss.reset_states()
+        train_accuracy.reset_states()
         for idx, (x_batch, y_batch) in enumerate(train_dataset):
             train_step(x_batch, y_batch)
 
         # validate
+        test_loss.reset_states()
+        test_accuracy.reset_states()
         for idx, (x_batch, y_batch) in enumerate(valid_dataset):
             valid_step(x_batch, y_batch)
 
@@ -98,6 +110,19 @@ def train(verbose=0):
                 train_loss.result(), train_accuracy.result() * 100,
                 test_loss.result(), test_accuracy.result() * 100
             ))
+    if 'SWA' in optimizer:
+        # for swa, use swa weights and reset batch_norm moving averages
+        optimizer.assign_swa_weights(model.variables)
+        # fix batch_norm moving averages
+        for _, (x_batch, __) in enumerate(train_dataset):
+            model(x_batch, training=True)
+
+        test_loss.reset_states()
+        test_accuracy.reset_states()
+        for idx, (x_batch, y_batch) in enumerate(valid_dataset):
+            valid_step(x_batch, y_batch)
+        print('SWA model cce {:.4f} acc {:4.2f}% cce'.format(test_loss.result(), test_accuracy.result() * 100))
+
     # it appears that for keras.Model subclass model, we can only save weights in 2.0 alpha
     model.save_weights(MODEL_FILE, save_format='tf')
 
@@ -116,13 +141,14 @@ if __name__ == '__main__':
     parser.add_argument('procedure', choices=['train', 'inference'],
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
+    parser.add_argument('--optimizer', default='Adam', help='optimizer of choice.')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     if args.procedure == 'train':
-        train(args.verbose)
+        train(args.optimizer, args.verbose)
     else:
         assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
         assert os.path.exists(args.image_path), 'can not find image file.'
