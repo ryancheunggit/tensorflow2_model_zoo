@@ -56,8 +56,10 @@ def _inverse_max_dcg(labels, N=4):
     discounted_gain = gain * discount
     discounted_gain = tf.reduce_sum(discounted_gain, axis=1, keepdims=True)
     discounted_gain = tf.where(
-            tf.greater(discounted_gain, 0.), 1. / discounted_gain,
-            tf.zeros_like(discounted_gain))
+        tf.greater(discounted_gain, 0.),
+        1. / discounted_gain,
+        tf.zeros_like(discounted_gain)
+    )
     return discounted_gain
 
 

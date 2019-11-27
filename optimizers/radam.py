@@ -86,7 +86,6 @@ class RAdam(tf.keras.optimizers.Optimizer):
         beta_1_power = tf.pow(beta_1_t, local_step)
         beta_2_power = tf.pow(beta_2_t, local_step)
 
-
         if self._initial_total_steps > 0:
             total_steps = self._get_hyper('total_steps', dtype)
             warmup_steps = total_steps * self._get_hyper('warmup_proportion', dtype)
@@ -146,7 +145,6 @@ class RAdam(tf.keras.optimizers.Optimizer):
         beta_1_power = tf.pow(beta_1_t, local_step)
         beta_2_power = tf.pow(beta_2_t, local_step)
 
-
         if self._initial_total_steps > 0:
             total_steps = self._get_hyper('total_steps', dtype)
             warmup_steps = total_steps * self._get_hyper('warmup_proportion', dtype)
@@ -199,7 +197,7 @@ class RAdam(tf.keras.optimizers.Optimizer):
         return tf.group(*updates)
 
     def get_config(self):
-        config = super(RectifiedAdam, self).get_config()
+        config = super(RAdam, self).get_config()
         config.update({
             'learning_rate': self._serialize_hyperparameter('learning_rate'),
             'beta_1': self._serialize_hyperparameter('beta_1'),

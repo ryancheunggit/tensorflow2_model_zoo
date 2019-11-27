@@ -4,7 +4,6 @@ import math
 import os
 import pickle
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from collections import defaultdict
 from afi import AutomaticFeatureInteraction
@@ -16,7 +15,6 @@ from fnn import FMNeuralNetwork
 from fnfm import FieldAwareNeuralFactorizationMachine
 from nfm import NeuralFactorizationMachine
 from xdfm import ExtremeDeepFactorizationMachine
-from functools import partial
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
@@ -28,7 +26,7 @@ parser.add_argument('--batch_size', type=int, default=9000)  # It's Over 9000!
 parser.add_argument('--factor_dim', type=int, default=16)
 parser.add_argument('--fc_hidden_sizes', type=str, default='256,128,1')
 parser.add_argument('--cin_hidden_sizes', type=str, default='16,8')
-parser.add_argument('--attn_size',  type=int, default=16)
+parser.add_argument('--attn_size', type=int, default=16)
 parser.add_argument('--attn_heads', type=int, default=2)
 parser.add_argument('--attn_layers', type=int, default=3)
 parser.add_argument('--learning_rate', type=float, default=3e-4)
@@ -226,7 +224,7 @@ def main():
             valid_loss(loss)
             valid_auc(y, probas)
         valid_message = 'epoch {:>4} validation loss {:.4f} - auc {:.4f}'.format(
-                epoch, valid_loss.result(), valid_auc.result())
+            epoch, valid_loss.result(), valid_auc.result())
         print(valid_message)
         with open(LOG_FILE, 'a+') as f:
             f.write(args.model + ' ' + valid_message + '\n')

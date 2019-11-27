@@ -76,7 +76,7 @@ def _test_cin():
 
 def _test_xdfm():
     x = tf.convert_to_tensor([[1, 2, 2, 1, 5], [0, 3, 2, 2, 4], [2, 2, 2, 1, 1]])
-    m = ExtremeDeepFactorizationMachine([3,4,5,4,6], 4, [20, 10, 1], [10, 5], .1, False)
+    m = ExtremeDeepFactorizationMachine([3, 4, 5, 4, 6], 4, [20, 10, 1], [10, 5], .1, False)
     o = m(x)
     assert o.shape == (32, 1)
 

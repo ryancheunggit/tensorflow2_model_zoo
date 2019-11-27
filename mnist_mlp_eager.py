@@ -62,14 +62,16 @@ def train(verbose=0):
     criterion = keras.losses.SparseCategoricalCrossentropy()
     optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
     train_loss = keras.metrics.Mean()
-    test_loss = keras.metrics.Mean()
     train_accuracy = keras.metrics.SparseCategoricalAccuracy()
+    test_loss = keras.metrics.Mean()
     test_accuracy = keras.metrics.SparseCategoricalAccuracy()
 
     # training loop
     for epoch in range(NUM_EPOCHS):
         t0 = datetime.now()
         # train
+        train_loss.reset_states()
+        train_accuracy.reset_states()
         for idx, (x_batch, y_batch) in enumerate(train_dataset):
             with tf.GradientTape() as tape:
                 out = model(x_batch, training=True)
@@ -80,6 +82,8 @@ def train(verbose=0):
             train_accuracy(y_batch, out)
 
         # validate
+        test_loss.reset_states()
+        test_accuracy.reset_states()
         for idx, (x_batch, y_batch) in enumerate(valid_dataset):
             out = model(x_batch, training=False)
             loss = criterion(y_batch, out)

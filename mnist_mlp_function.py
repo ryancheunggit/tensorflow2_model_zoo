@@ -14,7 +14,7 @@ from optimizers import LAMB, RAdam, SWA, Lookahead, LARS
 BATCH_SIZE = 32
 NUM_CLASS = 10
 NUM_EPOCHS = 30
-LEARNING_RATE = .1 # 1e-3
+LEARNING_RATE = .1  # 1e-3
 if not os.path.exists('models/mnist_mlp_function/'):
     os.mkdir('models/mnist_mlp_function/')
 MODEL_FILE = 'models/mnist_mlp_function/model'

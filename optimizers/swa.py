@@ -20,7 +20,7 @@ class SWA(tf.keras.optimizers.Optimizer):
         self._optimizer = optimizer
         self._set_hyper('swa_start', swa_start)
         self._set_hyper('swa_freq', swa_freq)
-        self._initialized=False
+        self._initialized = False
 
     def _apply_gradients(self, grads_and_vars, name=None):
         self._optimizer._iterations = self.iterations
@@ -56,7 +56,6 @@ class SWA(tf.keras.optimizers.Optimizer):
     @learning_rate.setter
     def learning_rate(self, learning_rate):
         self._optimizer._set_hyper('learning_rate', learning_rate)
-
 
     def _average_op(self, var):
         swa_var = self.get_slot(var, 'swa')
@@ -95,7 +94,7 @@ class SWA(tf.keras.optimizers.Optimizer):
             'optimizer': tf.keras.optimizers.serialize(self._optimizer),
             'swa_start': self._serialize_hyperparameter('swa_start'),
             'swa_freq': self._serialize_hyperparameter('swa_freq'),
-            }
+        }
         base_config = super(SWA, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 

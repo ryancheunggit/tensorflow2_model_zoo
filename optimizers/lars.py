@@ -42,12 +42,13 @@ class LARS(tf.keras.optimizers.Optimizer):
             weight_norm = tf.norm(var, ord=2)
             grad_norm = tf.norm(grad, ord=2)
             ratio = tf.where(
-                    tf.greater(weight_norm, 0),
-                    tf.where(
-                        tf.greater(grad_norm, 0),
-                        eeta * weight_norm / (grad_norm + weight_decay * weight_norm + epsilon),
-                        1.),
-                    1.)
+                tf.greater(weight_norm, 0),
+                tf.where(
+                    tf.greater(grad_norm, 0),
+                    eeta * weight_norm / (grad_norm + weight_decay * weight_norm + epsilon),
+                    1.),
+                1.
+            )
             scaled_lr *= ratio
             grad = grad + weight_decay * var
         return scaled_lr, grad

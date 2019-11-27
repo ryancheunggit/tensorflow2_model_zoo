@@ -95,7 +95,7 @@ class LAMB(tf.keras.optimizers.Optimizer):
         v = self.get_slot(var, 'v')
         v_t = v.assign(coeffs['beta_2_t'] * v, use_locking=self._use_locking)
         with tf.control_dependencies([v_t]):
-            v_t = self._resource_scatter_add(v, indices,  (1 - coeffs['beta_2_t']) * tf.square(grad))
+            v_t = self._resource_scatter_add(v, indices, (1 - coeffs['beta_2_t']) * tf.square(grad))
 
         # bias correction
         m_t = m_t / (1. - coeffs['beta_1_power'])
@@ -127,4 +127,3 @@ class LAMB(tf.keras.optimizers.Optimizer):
             'epsilon': self.epsilon,
         })
         return config
-

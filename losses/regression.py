@@ -15,4 +15,3 @@ def smooth_l1_loss(labels, predictions):
     z2 = .5 * tf.square(tf.boolean_mask(labels, l2_mask) - tf.boolean_mask(predictions, l2_mask))
     loss = (tf.reduce_sum(z1) + tf.reduce_sum(z2)) / n
     return loss
-
