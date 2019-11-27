@@ -46,6 +46,7 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 | [SWA](optimizers/swa.py) | [Averaging Weights Leads to Wider Optima and Better Generalization](https://arxiv.org/abs/1803.05407) | 2018 |
 | [RAdam](optimizers/radam.py) | [On the Variance of the Adaptive Learning Rate and Beyond](https://arxiv.org/abs/1908.03265) | 2019 |
 | [LAMB](optimizers/lamb.py) | [Large Batch Optimization for Deep Learning: Training BERT in 76 minutes](https://arxiv.org/abs/1904.00962) | 2019 |
+| [Lookahead](optimizers/lookahead.py) | [Lookahead Optimizer: k steps forward, 1 step back](https://arxiv.org/abs/1907.08610) | 2019 | 
 
 ### Convolutional Neural Networks
 | Model | Reference | Year |

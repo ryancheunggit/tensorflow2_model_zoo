@@ -5,7 +5,7 @@ import os
 import tensorflow as tf
 from datetime import datetime
 from tensorflow import keras
-from optimizers import LAMB, RAdam, SWA
+from optimizers import LAMB, RAdam, SWA, Lookahead
 # This is a modification to the mnist_mlp_eager.py
 # simply wrap the training step and validation in function with tf.function decorator
 # Noticed ~5 times faster even on CPU
@@ -44,7 +44,7 @@ class MLP(keras.Model):
         return x
 
 
-def train(optimizer='Adam', use_swa=False, verbose=0):
+def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
     """Train the model."""
     # load dataset
     mnist = keras.datasets.mnist
@@ -65,6 +65,8 @@ def train(optimizer='Adam', use_swa=False, verbose=0):
         optimizer = RAdam(learning_rate=LEARNING_RATE)
     if use_swa:
         optimizer = SWA(optimizer, swa_start=25, swa_freq=1)
+    if use_lookahead:
+        optimizer = Lookahead(optimizer)
     train_loss = keras.metrics.Mean()
     train_accuracy = keras.metrics.SparseCategoricalAccuracy()
     test_loss = keras.metrics.Mean()
@@ -143,13 +145,14 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--optimizer', default='Adam', help='optimizer of choice.')
     parser.add_argument('--use_swa', default=False, action='store_true', help='wrap optimizer with SWA')
+    parser.add_argument('--use_lookahead', default=False, action='store_true', help='wrap optimizer with Lookahead')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     if args.procedure == 'train':
-        train(args.optimizer, args.use_swa, args.verbose)
+        train(args.optimizer, args.use_swa, args.use_lookahead, args.verbose)
     else:
         assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
         assert os.path.exists(args.image_path), 'can not find image file.'
