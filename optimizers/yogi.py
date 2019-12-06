@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 
-class Yoji(tf.keras.optimizers.Optimizer):
-    """Optimizer that implements the Yoji algorithm.
+class Yogi(tf.keras.optimizers.Optimizer):
+    """Optimizer that implements the Yogi algorithm.
 
-    Yoji is a variant of Adam, which use additve instead of mutilictive updates to the second moment.
+    Yogi is a variant of Adam, which use additve instead of mutilictive updates to the second moment.
 
     Reference: https://papers.nips.cc/paper/8186-adaptive-methods-for-nonconvex-optimization
     """
@@ -15,7 +15,7 @@ class Yoji(tf.keras.optimizers.Optimizer):
                  epsilon=1e-3,
                  name='Yoji',
                  **kwargs):
-        super(Yoji, self).__init__(name, **kwargs)
+        super(Yogi, self).__init__(name, **kwargs)
         self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
         self._set_hyper('beta_1', beta_1)
         self._set_hyper('beta_2', beta_2)
@@ -84,7 +84,7 @@ class Yoji(tf.keras.optimizers.Optimizer):
 
 
     def get_config(self):
-        config = super(Yoji, self).get_config()
+        config = super(Yogi, self).get_config()
         config.update({
             'learning_rate': self._serialize_hyperparameter('learning_rate'),
             'beta_1': self._serialize_hyperparameter('beta_1'),

@@ -5,7 +5,7 @@ import os
 import tensorflow as tf
 from datetime import datetime
 from tensorflow import keras
-from optimizers import LAMB, RAdam, SWA, Lookahead, LARS, Yoji
+from optimizers import LAMB, RAdam, SWA, Lookahead, LARS, Yogi
 # This is a modification to the mnist_mlp_eager.py
 # simply wrap the training step and validation in function with tf.function decorator
 # Noticed ~5 times faster even on CPU
@@ -65,8 +65,8 @@ def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
         optimizer = RAdam(learning_rate=LEARNING_RATE)
     elif optimizer == 'LARS':
         optimizer = LARS(learning_rate=LEARNING_RATE)
-    elif optimizer == 'Yoji':
-        optimizer = Yoji(learning_rate=LEARNING_RATE)
+    elif optimizer == 'Yogi':
+        optimizer = Yogi(learning_rate=LEARNING_RATE)
     if use_swa:
         optimizer = SWA(optimizer, swa_start=25, swa_freq=1)
     if use_lookahead:
