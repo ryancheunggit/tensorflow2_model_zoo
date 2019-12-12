@@ -5,11 +5,13 @@ import os
 import tensorflow as tf
 from datetime import datetime
 from tensorflow import keras
-from optimizers import LAMB, RAdam, SWA, Lookahead, LARS, Yogi
+from optimizers import SWA, Lookahead, get_optimizer
+from optimizers.schedulers import LRFinder
 # This is a modification to the mnist_mlp_eager.py
 # simply wrap the training step and validation in function with tf.function decorator
-# Noticed ~5 times faster even on CPU
-# Added option to try some other optimizers
+# Added option to try some other optimizers.
+# Added procedure to plot learning rate finder result.
+
 
 BATCH_SIZE = 32
 NUM_CLASS = 10
@@ -44,6 +46,40 @@ class MLP(keras.Model):
         return x
 
 
+def find_lr(optimizer='Adam', verbose=0):
+    fname = 'plots/mnist_lr_finder_for_{}.png'.format(optimizer)
+    model = MLP()
+    criterion = keras.losses.SparseCategoricalCrossentropy()
+    if optimizer == 'Adam':
+        optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    else:
+        optimizer = get_optimizer(optimizer, learning_rate=LEARNING_RATE)
+    mnist = keras.datasets.mnist
+    (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
+    x_train = x_train.reshape(60000, 784).astype('float32') / 255.0
+    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train)).batch(BATCH_SIZE)
+
+    @tf.function
+    def train_step(x_batch, y_batch):
+        with tf.GradientTape() as tape:
+            out = model(x_batch, training=True)
+            loss = criterion(y_batch, out)
+        grad = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(grad, model.trainable_variables))
+        return loss
+
+    lr_finder = LRFinder(start_lr=1e-7, max_lr=1e-1)
+    for idx, (x_batch, y_batch) in enumerate(train_dataset):
+        loss = train_step(x_batch, y_batch)
+        new_lr = lr_finder.step(loss.numpy())
+        optimizer.lr.assign(new_lr)
+        if lr_finder.done:
+            break
+    lr_finder.plot_lr(fname)
+    if verbose:
+        print(lr_finder.history)
+
+
 def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
     """Train the model."""
     # load dataset
@@ -59,14 +95,8 @@ def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
     criterion = keras.losses.SparseCategoricalCrossentropy()
     if optimizer == 'Adam':
         optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
-    elif optimizer == 'LAMB':
-        optimizer = LAMB(learning_rate=LEARNING_RATE)
-    elif optimizer == 'RAdam':
-        optimizer = RAdam(learning_rate=LEARNING_RATE)
-    elif optimizer == 'LARS':
-        optimizer = LARS(learning_rate=LEARNING_RATE)
-    elif optimizer == 'Yogi':
-        optimizer = Yogi(learning_rate=LEARNING_RATE)
+    else:
+        optimizer = get_optimizer(optimizer, learning_rate=LEARNING_RATE)
     if use_swa:
         optimizer = SWA(optimizer, swa_start=25, swa_freq=1)
     if use_lookahead:
@@ -144,7 +174,7 @@ def inference(filepath):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for program')
-    parser.add_argument('procedure', choices=['train', 'inference'],
+    parser.add_argument('procedure', choices=['train', 'inference', 'find_lr'],
                         help='Whether to train a new model or use trained model to inference.')
     parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--optimizer', default='Adam', help='optimizer of choice.')
@@ -155,7 +185,9 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    if args.procedure == 'train':
+    if args.procedure == 'find_lr':
+        find_lr(args.optimizer, args.verbose)
+    elif args.procedure == 'train':
         train(args.optimizer, args.use_swa, args.use_lookahead, args.verbose)
     else:
         assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
