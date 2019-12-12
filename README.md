@@ -92,4 +92,4 @@ See the [benchmark result](fm/benchmark.md) on how to use the benchmark runner t
 | [FNFM](fm/fnfm.py) | [Field-aware Neural Factorization Machine for Click-Through Rate Prediction](https://arxiv.org/abs/1902.09096) | 2019 |
 
 ### Bag of Tricks
-+ [Learning rate finder](optimizers/schedulers/lr_finder.py) - Train the model over small number of iterations with increasing learning rates. Plot the loss values against the learning rates to identify sweet spot.
++ [Learning rate finder](optimizers/schedulers/lr_finder.py) - Train the model over small number of iterations with increasing learning rates. Plot the loss values against the learning rates to identify sweet spot. [Reference](https://arxiv.org/abs/1803.09820)
