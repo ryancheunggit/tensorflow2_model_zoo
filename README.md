@@ -90,3 +90,6 @@ See the [benchmark result](fm/benchmark.md) on how to use the benchmark runner t
 | [xDeepFM](fm/xdfm.py) | [xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems](https://arxiv.org/abs/1803.05170) | 2018 |
 | [AutoInt](fm/afi.py) | [AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks](https://arxiv.org/abs/1810.11921) | 2018 |
 | [FNFM](fm/fnfm.py) | [Field-aware Neural Factorization Machine for Click-Through Rate Prediction](https://arxiv.org/abs/1902.09096) | 2019 |
+
+### Bag of Tricks
++ [Learning rate finder](optimizers/schedulers/lr_finder.py) - Train the model over small number of iterations with increasing learning rates. Plot the loss values against the learning rates to identify sweet spot.
