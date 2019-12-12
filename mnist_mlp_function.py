@@ -16,7 +16,7 @@ from optimizers.schedulers import LRFinder
 BATCH_SIZE = 32
 NUM_CLASS = 10
 NUM_EPOCHS = 30
-LEARNING_RATE = .1  # 1e-3
+LEARNING_RATE = 1e-3
 if not os.path.exists('models/mnist_mlp_function/'):
     os.mkdir('models/mnist_mlp_function/')
 MODEL_FILE = 'models/mnist_mlp_function/model'
@@ -80,7 +80,7 @@ def find_lr(optimizer='Adam', verbose=0):
         print(lr_finder.history)
 
 
-def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
+def train(optimizer='Adam', use_swa=False, use_lookahead=False, mc_dropout=False, verbose=0):
     """Train the model."""
     # load dataset
     mnist = keras.datasets.mnist
@@ -123,6 +123,16 @@ def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
         test_loss(loss)
         test_accuracy(y_batch, out)
 
+    @tf.function
+    def valid_step_with_dropout(x_batch, y_batch, num_samples=100):
+        outs = []
+        for i in range(num_samples):
+            outs.append(model(x_batch, training=True))
+        out = tf.reduce_mean(tf.stack(outs), 0)
+        loss = criterion(y_batch, out)
+        test_loss(loss)
+        test_accuracy(y_batch, out)
+
     # training loop
     for epoch in range(NUM_EPOCHS):
         t0 = datetime.now()
@@ -159,6 +169,23 @@ def train(optimizer='Adam', use_swa=False, use_lookahead=False, verbose=0):
             valid_step(x_batch, y_batch)
         print('SWA model cce {:.4f} acc {:4.2f}% cce'.format(test_loss.result(), test_accuracy.result() * 100))
 
+    if mc_dropout:
+        # see how Monte Carlo Dropout performs
+        test_loss.reset_states()
+        test_accuracy.reset_states()
+        for idx, (x_batch, y_batch) in enumerate(valid_dataset):
+            valid_step(x_batch, y_batch)
+        message_template = 'test without mc dropout cce {:.4f} acc {:4.2f}%'
+        print(message_template.format(test_loss.result(), test_accuracy.result() * 100))
+
+        test_loss.reset_states()
+        test_accuracy.reset_states()
+        for idx, (x_batch, y_batch) in enumerate(valid_dataset):
+            valid_step_with_dropout(x_batch, y_batch)
+        message_template = 'test with mc dropout cce {:.4f} acc {:4.2f}%'
+        print(message_template.format(test_loss.result(), test_accuracy.result() * 100))
+
+
     # it appears that for keras.Model subclass model, we can only save weights in 2.0 alpha
     model.save_weights(MODEL_FILE, save_format='tf')
 
@@ -176,10 +203,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for program')
     parser.add_argument('procedure', choices=['train', 'inference', 'find_lr'],
                         help='Whether to train a new model or use trained model to inference.')
+    parser.add_argument('--image_path', default=None, help='Path to jpeg image file to predict on.')
     parser.add_argument('--gpu', default='', help='gpu device id expose to program, default is cpu only.')
     parser.add_argument('--optimizer', default='Adam', help='optimizer of choice.')
     parser.add_argument('--use_swa', default=False, action='store_true', help='wrap optimizer with SWA')
     parser.add_argument('--use_lookahead', default=False, action='store_true', help='wrap optimizer with Lookahead')
+    parser.add_argument('--mc_dropout', default=False, action='store_true', help='whehter to evalutate MC dropout')
     parser.add_argument('--verbose', type=int, default=0)
     args = parser.parse_args()
 
@@ -188,7 +217,7 @@ if __name__ == '__main__':
     if args.procedure == 'find_lr':
         find_lr(args.optimizer, args.verbose)
     elif args.procedure == 'train':
-        train(args.optimizer, args.use_swa, args.use_lookahead, args.verbose)
+        train(args.optimizer, args.use_swa, args.use_lookahead, args.mc_dropout, args.verbose)
     else:
         assert os.path.exists(MODEL_FILE + '.index'), 'model not found, train a model before calling inference.'
         assert os.path.exists(args.image_path), 'can not find image file.'

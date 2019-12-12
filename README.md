@@ -93,3 +93,4 @@ See the [benchmark result](fm/benchmark.md) on how to use the benchmark runner t
 
 ### Bag of Tricks
 + [Learning rate finder](optimizers/schedulers/lr_finder.py) - Train the model over small number of iterations with increasing learning rates. Plot the loss values against the learning rates to identify sweet spot. [Reference](https://arxiv.org/abs/1803.09820)
++ [Monte Carlo Dropout](mnist_mlp_function.py#172) - Kind of TTA procedure, that averages the predictions from model with dropout activated in inference mode. [Reference](https://arxiv.org/abs/1506.02142)
