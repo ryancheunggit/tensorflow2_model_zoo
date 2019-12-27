@@ -31,7 +31,9 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
     + [unsupervised categorical feature embedding](titanic_cat_embd_ae.py)
 
 ### Tutorial Notebooks
-1. [Tensorflow basics](notebooks/01_basics.ipynb)
+1. [Tensors Variables Operations and AutoDiff](notebooks/1_Tensors_Variables_Operations_and_AutoDiff.ipynb)
+2. [AutoGraph](notebooks/2_AutoGraph.ipynb)
+3. [Custom Model and Layer](notebooks/3_Custom_Model_and_Layer.ipynb)
 
 ### Losses  
 | Loss | Reference | Year |
