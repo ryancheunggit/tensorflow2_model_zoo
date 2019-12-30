@@ -30,10 +30,11 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 3. `dataset == titanic`
     + [unsupervised categorical feature embedding](titanic_cat_embd_ae.py)
 
-### Tutorial Notebooks
+### Tutorial Notebooks - I call this 'Learn Tensorflow 2.0 the Hard Way'  
 1. [Tensors Variables Operations and AutoDiff](notebooks/1_Tensors_Variables_Operations_and_AutoDiff.ipynb)
 2. [AutoGraph](notebooks/2_AutoGraph.ipynb)
 3. [Custom Model and Layer](notebooks/3_Custom_Model_and_Layer.ipynb)
+4. [Optimizers](notebooks/4_Optimizers.ipynb)
 
 ### Losses  
 | Loss | Reference | Year |
