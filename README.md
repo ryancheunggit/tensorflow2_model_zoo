@@ -35,6 +35,7 @@ GPU version please consult [GPU Guide](https://www.tensorflow.org/install/gpu)
 2. [AutoGraph](notebooks/2_AutoGraph.ipynb)
 3. [Custom Model and Layer](notebooks/3_Custom_Model_and_Layer.ipynb)
 4. [Optimizers](notebooks/4_Optimizers.ipynb)
+5. [Loss Function](notebooks/5_Loss_Function.ipynb)
 
 ### Losses  
 | Loss | Reference | Year |
